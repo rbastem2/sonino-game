@@ -17,6 +17,7 @@ data class Carta(val valor: String, val naipe: String) {
 
 class MainActivity : AppCompatActivity() {
     val naipes = listOf("♠", "♥", "♦", "♣")
+    val nomesNaipes = mapOf("♠" to "Espadas", "♥" to "Copas", "♦" to "Ouros", "♣" to "Paus")
     val valores = listOf("A", "7", "K", "J", "Q", "6", "5", "4", "3", "2")
     
     var baralho = mutableListOf<Carta>()
@@ -24,11 +25,8 @@ class MainActivity : AppCompatActivity() {
     var maoAndroid = mutableListOf<Carta>()
     var trunfo = ""
     
-    // Placar da Partida (Mãos ganhas)
     var maosJogador = 0
     var maosAndroid = 0
-    
-    // Placar do Jogo (Melhor de 3 partidas)
     var partidasJogador = 0
     var partidasAndroid = 0
     
@@ -37,12 +35,14 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var uiCartasJogador: List<TextView>
     lateinit var uiImgsJogador: List<ImageView>
+    lateinit var uiImgsAndroid: List<ImageView>
     lateinit var mesaJogador: TextView
     lateinit var mesaAndroid: TextView
     lateinit var imgMesaJogador: ImageView
     lateinit var imgMesaAndroid: ImageView
     lateinit var txtScoreJogador: TextView
     lateinit var txtScoreAndroid: TextView
+    lateinit var txtTrunfo: TextView
     
     var cartaAndroidJogada: Carta? = null
 
@@ -53,6 +53,7 @@ class MainActivity : AppCompatActivity() {
 
     fun mostrarMenuPrincipal() {
         setContentView(R.layout.activity_main)
+        trunfo = "" // Reseta o trunfo ao voltar pro menu
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
             partidasJogador = 0
@@ -62,7 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnRegras).setOnClickListener {
             AlertDialog.Builder(this).setTitle("Regras do SONINO")
-                .setMessage("• Melhor de 3 partidas.\n• Cada partida é ganha por quem fizer 3 mãos primeiro.\n• Trunfo: última carta do baralho.\n• Quem ganha a mão joga primeiro na próxima.\n• A pontuação oficial (61 pontos) será implementada em breve.")
+                .setMessage("• Melhor de 3 partidas.\n• Cada partida é ganha por quem fizer 3 mãos primeiro.\n• Trunfo: última carta do baralho.\n• Quem ganha a mão joga primeiro na próxima.")
                 .setPositiveButton("Entendi", null).show()
         }
 
@@ -100,12 +101,14 @@ class MainActivity : AppCompatActivity() {
     fun configurarElementosTela() {
         uiCartasJogador = listOf(findViewById(R.id.cartaJogador1), findViewById(R.id.cartaJogador2), findViewById(R.id.cartaJogador3))
         uiImgsJogador = listOf(findViewById(R.id.imgJogador1), findViewById(R.id.imgJogador2), findViewById(R.id.imgJogador3))
+        uiImgsAndroid = listOf(findViewById(R.id.cartaAndroid1), findViewById(R.id.cartaAndroid2), findViewById(R.id.cartaAndroid3))
         mesaJogador = findViewById(R.id.cartaMesaJogador)
         mesaAndroid = findViewById(R.id.cartaMesaAndroid)
         imgMesaJogador = findViewById(R.id.imgMesaJogador)
         imgMesaAndroid = findViewById(R.id.imgMesaAndroid)
         txtScoreJogador = findViewById(R.id.txtScoreJogador)
         txtScoreAndroid = findViewById(R.id.txtScoreAndroid)
+        txtTrunfo = findViewById(R.id.txtTrunfo)
     }
 
     fun getImagemCarta(carta: Carta): Int {
@@ -129,8 +132,8 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun atualizarPlacar() {
-        txtScoreJogador.text = "👤 Você: $maosJogador (Partidas: $partidasJogador)"
-        txtScoreAndroid.text = "🤖 Android: $maosAndroid (Partidas: $partidasAndroid)"
+        txtScoreJogador.text = "$maosJogador (Vitórias: $partidasJogador)"
+        txtScoreAndroid.text = "$maosAndroid (Vitórias: $partidasAndroid)"
     }
 
     fun iniciarRodada() {
@@ -138,10 +141,12 @@ class MainActivity : AppCompatActivity() {
         for (n in naipes) { for (v in valores) { baralho.add(Carta(v, n)) } }
         baralho.shuffle()
         
-        if (trunfo.isEmpty()) {
-            trunfo = baralho.last().naipe
-            findViewById<TextView>(R.id.txtTrunfo).text = "Trunfo: $trunfo"
-        }
+        // O trunfo é a última carta do baralho
+        val naipeTrunfo = baralho.last().naipe
+        trunfo = naipeTrunfo
+        
+        // Atualiza o texto do trunfo na tela (Correção aqui!)
+        txtTrunfo.text = "Trunfo:\n${nomesNaipes[trunfo]} $trunfo"
 
         maoJogador.clear(); maoAndroid.clear()
         for (i in 0..2) {
@@ -184,6 +189,9 @@ class MainActivity : AppCompatActivity() {
                 mostrarCarta(uiCartasJogador[i], uiImgsJogador[i], null)
             }
         }
+        for (i in 0..2) {
+            uiImgsAndroid[i].visibility = if (i < maoAndroid.size) ImageView.VISIBLE else ImageView.GONE
+        }
     }
 
     fun jogarCarta(index: Int) {
@@ -195,10 +203,8 @@ class MainActivity : AppCompatActivity() {
         atualizarTela()
 
         if (cartaAndroidJogada != null) {
-            // O Android já tinha jogado, então nós avaliamos a mesa
             avaliarRodada(cartaJogada, cartaAndroidJogada!!)
         } else {
-            // O Jogador jogou primeiro, o Android vai responder
             Handler(Looper.getMainLooper()).postDelayed({ androidResponde(cartaJogada) }, 1000)
         }
     }
@@ -268,8 +274,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (jogadorGanhou) maosJogador++ else maosAndroid++
-        
-        // REGRA: Quem ganhou, começa a próxima
         jogadorComeca = jogadorGanhou 
         atualizarPlacar()
 

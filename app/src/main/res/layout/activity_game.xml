@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/verde_mesa">
+    android:background="@drawable/fundo_tabuleiro">
 
-    <!-- Topo: Você vs Android e Botão Menu -->
+    <!-- Topo: Placar Estilizado -->
     <LinearLayout
         android:id="@+id/topoPlacar"
         android:layout_width="match_parent"
@@ -13,73 +13,108 @@
         android:layout_marginTop="16dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="8dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/txtScoreJogador"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="👤 Você: 0"
-            android:textColor="@color/branco"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/txtTrunfo"
+        <!-- Lado Jogador -->
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="center"
-            android:text="Trunfo: --"
-            android:textColor="@color/dourado"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                app:tint="@color/dourado" />
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="6dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Jogador" android:textColor="@color/branco" android:textSize="12sp" />
+                <TextView android:id="@+id/txtScoreJogador" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="@color/dourado" android:textSize="18sp" android:textStyle="bold"/>
+            </LinearLayout>
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/txtScoreAndroid"
+        <!-- Centro: Partidas e Trunfo (Aqui está a correção visual) -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🤖 Android: 0"
-            android:textColor="@color/branco"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:background="@drawable/btn_escuro"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <TextView 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content" 
+                android:text="Partidas p/ vencer:" 
+                android:textColor="@color/branco" 
+                android:textSize="10sp"/>
+                
+            <TextView 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content" 
+                android:text="3" 
+                android:textColor="@color/branco" 
+                android:textSize="14sp" 
+                android:textStyle="bold"
+                android:layout_marginBottom="2dp"/>
+                
+            <TextView 
+                android:id="@+id/txtTrunfo" 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content" 
+                android:text="Trunfo: --" 
+                android:textColor="@color/dourado" 
+                android:textSize="14sp" 
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- Lado Android -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical|end">
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginEnd="6dp" android:gravity="end">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Android" android:textColor="@color/branco" android:textSize="12sp" />
+                <TextView android:id="@+id/txtScoreAndroid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="@color/dourado" android:textSize="18sp" android:textStyle="bold"/>
+            </LinearLayout>
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@android:drawable/ic_menu_manage"
+                app:tint="@color/dourado" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Botão Voltar ao Menu no topo esquerdo -->
     <Button
         android:id="@+id/btnMenu"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="48dp"
+        android:layout_margin="8dp"
         android:background="@drawable/btn_escuro"
         android:text="≡"
         android:textColor="@color/dourado"
         android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
     <!-- Cartas do Android -->
     <LinearLayout
         android:id="@+id/areaAndroid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topoPlacar">
+        app:layout_constraintTop_toBottomOf="@+id/btnMenu">
 
-        <FrameLayout android:layout_width="55dp" android:layout_height="85dp" android:layout_margin="4dp" android:background="@color/preto_fundo">
-            <TextView android:id="@+id/cartaAndroid1" android:layout_width="match_parent" android:layout_height="match_parent" android:text="🇬🇼" android:textColor="@color/dourado" android:gravity="center" android:textSize="20sp"/>
-        </FrameLayout>
-        <FrameLayout android:layout_width="55dp" android:layout_height="85dp" android:layout_margin="4dp" android:background="@color/preto_fundo">
-            <TextView android:id="@+id/cartaAndroid2" android:layout_width="match_parent" android:layout_height="match_parent" android:text="🇬🇼" android:textColor="@color/dourado" android:gravity="center" android:textSize="20sp"/>
-        </FrameLayout>
-        <FrameLayout android:layout_width="55dp" android:layout_height="85dp" android:layout_margin="4dp" android:background="@color/preto_fundo">
-            <TextView android:id="@+id/cartaAndroid3" android:layout_width="match_parent" android:layout_height="match_parent" android:text="🇬🇼" android:textColor="@color/dourado" android:gravity="center" android:textSize="20sp"/>
-        </FrameLayout>
+        <ImageView android:id="@+id/cartaAndroid1" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/cartaAndroid2" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/cartaAndroid3" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
     </LinearLayout>
 
     <!-- Mesa Central -->
@@ -87,21 +122,21 @@
         android:id="@+id/areaMesa"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#33000000"
         android:orientation="horizontal"
         android:padding="16dp"
+        android:gravity="center"
         app:layout_constraintBottom_toTopOf="@+id/areaJogador"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/areaAndroid">
 
-        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="8dp" android:background="#FFFFFF">
-            <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone"/>
+        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="8dp" android:elevation="8dp">
+            <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
         </FrameLayout>
 
-        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="8dp" android:background="#FFFFFF">
-            <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone"/>
+        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="8dp" android:elevation="8dp">
+            <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
         </FrameLayout>
     </LinearLayout>
@@ -117,18 +152,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <FrameLayout android:layout_width="75dp" android:layout_height="110dp" android:layout_margin="4dp" android:background="#FFFFFF" android:elevation="4dp">
-            <ImageView android:id="@+id/imgJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone"/>
+        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="4dp" android:elevation="6dp">
+            <ImageView android:id="@+id/imgJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
         
-        <FrameLayout android:layout_width="75dp" android:layout_height="110dp" android:layout_margin="4dp" android:background="#FFFFFF" android:elevation="4dp">
-            <ImageView android:id="@+id/imgJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone"/>
+        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="4dp" android:elevation="6dp">
+            <ImageView android:id="@+id/imgJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
 
-        <FrameLayout android:layout_width="75dp" android:layout_height="110dp" android:layout_margin="4dp" android:background="#FFFFFF" android:elevation="4dp">
-            <ImageView android:id="@+id/imgJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:visibility="gone"/>
+        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="4dp" android:elevation="6dp">
+            <ImageView android:id="@+id/imgJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
     </LinearLayout>
