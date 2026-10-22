@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getImagemCarta(carta: Carta): Int {
-        val valorNome = carta.valor.lowercase()
+        val valorNome = if (carta.valor.toIntOrNull() != null) "n${carta.valor}" else carta.valor.lowercase()
         val naipeNome = when(carta.naipe) { "♠" -> "espadas"; "♥" -> "copas"; "♦" -> "ouros"; "♣" -> "paus"; else -> "" }
         return resources.getIdentifier("${valorNome}_${naipeNome}", "drawable", packageName)
     }
