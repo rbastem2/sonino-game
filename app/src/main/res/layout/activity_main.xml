@@ -4,109 +4,77 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/fundo_home"
-    android:padding="24dp">
+    android:padding="16dp">
 
-    <TextView
-        android:id="@+id/titulo"
+    <!-- Guia para posicionar os botões mais para baixo -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SONINO"
-        android:textColor="@color/dourado"
-        android:textSize="60sp"
-        android:textStyle="bold"
-        android:shadowColor="#000000"
-        android:shadowDx="4"
-        android:shadowDy="4"
-        android:shadowRadius="8"
-        app:layout_constraintBottom_toTopOf="@+id/subtitulo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed" />
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.72" />
 
-    <TextView
-        android:id="@+id/subtitulo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="Tradição • Estratégia • Diversão"
-        android:textColor="@color/branco"
-        android:textSize="16sp"
-        android:textStyle="italic"
-        app:layout_constraintBottom_toTopOf="@+id/btnJogar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/titulo" />
-
+    <!-- Botão JOGAR -->
     <Button
         android:id="@+id/btnJogar"
-        android:layout_width="300dp"
-        android:layout_height="75dp"
+        android:layout_width="260dp"
+        android:layout_height="65dp"
         android:background="@drawable/btn_dourado"
         android:text="JOGAR"
         android:textColor="#000000"
-        android:textSize="28sp"
+        android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/gridBotoes1"
+        app:layout_constraintBottom_toTopOf="@+id/linearBotoesMenu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/subtitulo" />
+        app:layout_constraintTop_toBottomOf="@+id/guideline" />
 
+    <!-- Linha única com os 3 botões alinhados no fundo -->
     <LinearLayout
-        android:id="@+id/gridBotoes1"
-        android:layout_width="300dp"
+        android:id="@+id/linearBotoesMenu"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
         android:orientation="horizontal"
-        app:layout_constraintBottom_toTopOf="@+id/gridBotoes2"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnJogar">
+        app:layout_constraintStart_toStartOf="parent">
 
         <Button
             android:id="@+id/btnRegras"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="4dp"
             android:background="@drawable/btn_escuro"
             android:text="REGRAS"
             android:textColor="@color/dourado"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnConfig"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
             android:background="@drawable/btn_escuro"
-            android:text="DIFICULDADE"
+            android:text="NÍVEL"
             android:textColor="@color/dourado"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/gridBotoes2"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/gridBotoes1">
 
         <Button
             android:id="@+id/btnHistorico"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
             android:background="@drawable/btn_escuro"
             android:text="HISTÓRICO"
             android:textColor="@color/dourado"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
 
