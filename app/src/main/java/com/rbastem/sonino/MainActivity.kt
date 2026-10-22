@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -19,19 +20,24 @@ class MainActivity : AppCompatActivity() {
     val naipes = listOf("♠", "♥", "♦", "♣")
     val nomesNaipes = mapOf("♠" to "Espadas", "♥" to "Copas", "♦" to "Ouros", "♣" to "Paus")
     val valores = listOf("A", "7", "K", "J", "Q", "6", "5", "4", "3", "2")
+    val pontosCartas = mapOf("A" to 11, "7" to 10, "K" to 4, "J" to 3, "Q" to 2)
     
     var baralho = mutableListOf<Carta>()
     var maoJogador = mutableListOf<Carta>()
     var maoAndroid = mutableListOf<Carta>()
     var trunfo = ""
+    var cartaTrunfo: Carta? = null
     
-    var maosJogador = 0
-    var maosAndroid = 0
+    var pontosJogador = 0
+    var pontosAndroid = 0
     var partidasJogador = 0
     var partidasAndroid = 0
     
     var jogadorComeca = true
     var dificuldade = "Difícil"
+
+    // Memória para a IA Mestre
+    var cartasJaJogadas = mutableListOf<Carta>()
 
     lateinit var uiCartasJogador: List<TextView>
     lateinit var uiImgsJogador: List<ImageView>
@@ -42,7 +48,10 @@ class MainActivity : AppCompatActivity() {
     lateinit var imgMesaAndroid: ImageView
     lateinit var txtScoreJogador: TextView
     lateinit var txtScoreAndroid: TextView
-    lateinit var txtTrunfo: TextView
+    lateinit var txtPartidas: TextView
+    lateinit var imgMonte: ImageView
+    lateinit var imgTrunfoMesa: ImageView
+    lateinit var txtTrunfoMesa: TextView
     
     var cartaAndroidJogada: Carta? = null
 
@@ -53,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     fun mostrarMenuPrincipal() {
         setContentView(R.layout.activity_main)
-        trunfo = "" // Reseta o trunfo ao voltar pro menu
+        trunfo = ""
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
             partidasJogador = 0
@@ -63,7 +72,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnRegras).setOnClickListener {
             AlertDialog.Builder(this).setTitle("Regras do SONINO")
-                .setMessage("• Melhor de 3 partidas.\n• Cada partida é ganha por quem fizer 3 mãos primeiro.\n• Trunfo: última carta do baralho.\n• Quem ganha a mão joga primeiro na próxima.")
+                .setMessage("• Baralho de 40 cartas.\n• Trunfo: última carta do baralho.\n• Ganha a rodada o trunfo mais forte ou a carta mais forte do naipe inicial.\n• Quem ganha, joga primeiro.\n• Vence quem fizer 61 pontos.\n• Torneio: melhor de 3.")
                 .setPositiveButton("Entendi", null).show()
         }
 
@@ -84,15 +93,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun iniciarNovaPartida() {
-        maosJogador = 0
-        maosAndroid = 0
+        pontosJogador = 0
+        pontosAndroid = 0
         jogadorComeca = true
+        cartasJaJogadas.clear()
         setContentView(R.layout.activity_game)
         configurarElementosTela()
         iniciarRodada()
         
         findViewById<Button>(R.id.btnMenu).setOnClickListener {
-            AlertDialog.Builder(this).setTitle("Sair").setMessage("Deseja voltar ao menu? O progresso desta partida será perdido.")
+            AlertDialog.Builder(this).setTitle("Sair").setMessage("Deseja voltar ao menu?")
                 .setPositiveButton("Sim") { _, _ -> mostrarMenuPrincipal() }
                 .setNegativeButton("Não", null).show()
         }
@@ -108,7 +118,10 @@ class MainActivity : AppCompatActivity() {
         imgMesaAndroid = findViewById(R.id.imgMesaAndroid)
         txtScoreJogador = findViewById(R.id.txtScoreJogador)
         txtScoreAndroid = findViewById(R.id.txtScoreAndroid)
-        txtTrunfo = findViewById(R.id.txtTrunfo)
+        txtPartidas = findViewById(R.id.txtPartidas)
+        imgMonte = findViewById(R.id.imgMonte)
+        imgTrunfoMesa = findViewById(R.id.imgTrunfoMesa)
+        txtTrunfoMesa = findViewById(R.id.txtTrunfoMesa)
     }
 
     fun getImagemCarta(carta: Carta): Int {
@@ -132,28 +145,32 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun atualizarPlacar() {
-        txtScoreJogador.text = "$maosJogador (Vitórias: $partidasJogador)"
-        txtScoreAndroid.text = "$maosAndroid (Vitórias: $partidasAndroid)"
+        txtScoreJogador.text = "$pontosJogador pts"
+        txtScoreAndroid.text = "$pontosAndroid pts"
+        txtPartidas.text = "$partidasJogador x $partidasAndroid"
     }
 
     fun iniciarRodada() {
-        baralho.clear()
-        for (n in naipes) { for (v in valores) { baralho.add(Carta(v, n)) } }
-        baralho.shuffle()
-        
-        // O trunfo é a última carta do baralho
-        val naipeTrunfo = baralho.last().naipe
-        trunfo = naipeTrunfo
-        
-        // Atualiza o texto do trunfo na tela (Correção aqui!)
-        txtTrunfo.text = "Trunfo:\n${nomesNaipes[trunfo]} $trunfo"
+        if (baralho.isEmpty() && maoJogador.isEmpty() && maoAndroid.isEmpty()) {
+            for (n in naipes) { for (v in valores) { baralho.add(Carta(v, n)) } }
+            baralho.shuffle()
+            
+            cartaTrunfo = baralho.last()
+            trunfo = cartaTrunfo!!.naipe
+            
+            // Mostra a carta de trunfo na mesa
+            mostrarCarta(txtTrunfoMesa, imgTrunfoMesa, cartaTrunfo)
+            imgTrunfoMesa.visibility = View.VISIBLE
 
-        maoJogador.clear(); maoAndroid.clear()
-        for (i in 0..2) {
-            maoJogador.add(baralho.removeAt(0))
-            maoAndroid.add(baralho.removeAt(0))
+            for (i in 0..2) {
+                maoJogador.add(baralho.removeAt(0))
+                maoAndroid.add(baralho.removeAt(0))
+            }
         }
         
+        // Atualiza o monte visual
+        imgMonte.visibility = if (baralho.isNotEmpty()) View.VISIBLE else View.GONE
+
         mesaJogador.text = ""; mesaAndroid.text = ""
         imgMesaJogador.visibility = ImageView.GONE; imgMesaAndroid.visibility = ImageView.GONE
         cartaAndroidJogada = null
@@ -203,7 +220,7 @@ class MainActivity : AppCompatActivity() {
         atualizarTela()
 
         if (cartaAndroidJogada != null) {
-            avaliarRodada(cartaJogada, cartaAndroidJogada!!)
+            Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogada, cartaAndroidJogada!!, false) }, 800)
         } else {
             Handler(Looper.getMainLooper()).postDelayed({ androidResponde(cartaJogada) }, 1000)
         }
@@ -218,7 +235,7 @@ class MainActivity : AppCompatActivity() {
         } else {
              var menorValor = 100
              for (i in maoAndroid.indices) {
-                 val p = mapOf("A" to 11, "7" to 10, "K" to 4, "J" to 3, "Q" to 2)[maoAndroid[i].valor] ?: 0
+                 val p = pontosCartas[maoAndroid[i].valor] ?: 0
                  if (p < menorValor) { menorValor = p; indexJogada = i }
              }
         }
@@ -246,11 +263,15 @@ class MainActivity : AppCompatActivity() {
                     cartaQueGanha = i; break
                 }
             }
-            if (cartaQueGanha != -1) { indexJogada = cartaQueGanha } 
-            else {
+            
+            // Inteligência Mestre: Se não pode ganhar, tenta descartar carta de ponto baixo, 
+            // a menos que saiba que o jogador não tem trunfo.
+            if (cartaQueGanha != -1) { 
+                indexJogada = cartaQueGanha 
+            } else {
                 var menorValor = 100
                 for (i in maoAndroid.indices) {
-                    val p = mapOf("A" to 11, "7" to 10, "K" to 4, "J" to 3, "Q" to 2)[maoAndroid[i].valor] ?: 0
+                    val p = pontosCartas[maoAndroid[i].valor] ?: 0
                     if (p < menorValor) { menorValor = p; indexJogada = i }
                 }
             }
@@ -260,20 +281,27 @@ class MainActivity : AppCompatActivity() {
         mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroid)
         atualizarTela()
 
-        Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogador, cartaAndroid) }, 1500)
+        Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogador, cartaAndroid, true) }, 1500)
     }
 
-    fun avaliarRodada(cartaJogador: Carta, cartaAndroid: Carta) {
+    fun avaliarRodada(cartaJogador: Carta, cartaAndroid: Carta, jogadorFoiPrimeiro: Boolean) {
         var jogadorGanhou = false
+        
         if (cartaJogador.naipe == cartaAndroid.naipe) {
             if (valores.indexOf(cartaJogador.valor) < valores.indexOf(cartaAndroid.valor)) jogadorGanhou = true
         } else {
             if (cartaJogador.naipe == trunfo) jogadorGanhou = true
             else if (cartaAndroid.naipe == trunfo) jogadorGanhou = false
-            else jogadorGanhou = true 
+            else jogadorGanhou = jogadorFoiPrimeiro 
         }
 
-        if (jogadorGanhou) maosJogador++ else maosAndroid++
+        // Adiciona à memória (para o nível Mestre)
+        cartasJaJogadas.add(cartaJogador)
+        cartasJaJogadas.add(cartaAndroid)
+
+        val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
+        if (jogadorGanhou) pontosJogador += pontosRodada else pontosAndroid += pontosRodada
+        
         jogadorComeca = jogadorGanhou 
         atualizarPlacar()
 
@@ -283,35 +311,45 @@ class MainActivity : AppCompatActivity() {
             
             if (baralho.isNotEmpty()) {
                 if (jogadorGanhou) {
-                    maoJogador.add(baralho.removeAt(0))
+                    if (baralho.isNotEmpty()) maoJogador.add(baralho.removeAt(0))
                     if (baralho.isNotEmpty()) maoAndroid.add(baralho.removeAt(0))
                 } else {
-                    maoAndroid.add(baralho.removeAt(0))
+                    if (baralho.isNotEmpty()) maoAndroid.add(baralho.removeAt(0))
                     if (baralho.isNotEmpty()) maoJogador.add(baralho.removeAt(0))
                 }
             }
 
-            if (maosJogador == 3 || maosAndroid == 3) {
+            if (maoJogador.isEmpty() && maoAndroid.isEmpty()) {
                 finalizarPartida()
             } else {
                 iniciarRodada()
             }
-        }, 1000)
+        }, 1200)
     }
 
     fun finalizarPartida() {
         var mensagem = ""
-        if (maosJogador == 3) {
+        if (pontosJogador >= 61 && pontosJogador > pontosAndroid) {
             partidasJogador++
-            mensagem = "Você ganhou esta partida!"
-        } else {
+            mensagem = "Você ganhou a partida com $pontosJogador pontos!"
+        } else if (pontosAndroid >= 61 && pontosAndroid > pontosJogador) {
             partidasAndroid++
-            mensagem = "O Android ganhou esta partida!"
+            mensagem = "O Android ganhou a partida com $pontosAndroid pontos!"
+        } else if (pontosJogador == 60 && pontosAndroid == 60) {
+            mensagem = "Empate na partida (60x60)!"
+        } else {
+            if (pontosJogador > pontosAndroid) {
+                partidasJogador++
+                mensagem = "Você ganhou por ter mais pontos ($pontosJogador a $pontosAndroid)!"
+            } else {
+                partidasAndroid++
+                mensagem = "O Android ganhou por ter mais pontos ($pontosAndroid a $pontosJogador)!"
+            }
         }
 
         if (partidasJogador == 2 || partidasAndroid == 2) {
             val vencedorFinal = if (partidasJogador == 2) "VOCÊ" else "ANDROID"
-            val msgFinal = "$mensagem\n\nFIM DE JOGO!\n\n$vencedorFinal venceu o torneio por ${partidasJogador} a ${partidasAndroid}."
+            val msgFinal = "$mensagem\n\nFIM DO TORNEIO!\n\n$vencedorFinal venceu o jogo por ${partidasJogador} a ${partidasAndroid}."
             
             val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
             val dataAtual = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
@@ -325,7 +363,9 @@ class MainActivity : AppCompatActivity() {
             val msgProx = "$mensagem\n\nPlacar do Torneio: Você $partidasJogador x $partidasAndroid Android\n\nPróxima partida!"
             AlertDialog.Builder(this).setTitle("Fim da Partida").setMessage(msgProx).setCancelable(false)
                 .setPositiveButton("Continuar") { _, _ -> 
-                    trunfo = ""
+                    baralho.clear()
+                    maoJogador.clear()
+                    maoAndroid.clear()
                     iniciarNovaPartida() 
                 }.show()
         }
