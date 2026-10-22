@@ -16,21 +16,14 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
         
-    - name: Configurar Gradle
+    - name: Configurar Gradle 8.6
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.6'
-
-    - name: Gerar Gradle Wrapper
-      run: gradle wrapper --gradle-version 8.6
-
-    - name: Limpar cache do Gradle
-      run: |
-        rm -rf ~/.gradle/caches
-        ./gradlew clean
+        cache-disabled: true
 
     - name: Compilar APK
-      run: ./gradlew assembleRelease
+      run: gradle assembleRelease
 
     - name: Enviar APK
       uses: actions/upload-artifact@v4
