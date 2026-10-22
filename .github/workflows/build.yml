@@ -16,13 +16,13 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
         
-    - name: Configurar Gradle
+    - name: Instalar Gradle 8.4
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: 'wrapper'
+        gradle-version: '8.4'
 
     - name: Compilar APK
-      run: chmod +x ./gradlew && ./gradlew assembleRelease
+      run: gradle assembleRelease
 
     - name: Enviar APK
       uses: actions/upload-artifact@v4
