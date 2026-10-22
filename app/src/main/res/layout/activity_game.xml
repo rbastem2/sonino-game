@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/verde_mesa">
 
-    <!-- Topo: Jogador vs Android -->
+    <!-- Topo: Você vs Android e Botão Menu -->
     <LinearLayout
         android:id="@+id/topoPlacar"
         android:layout_width="match_parent"
@@ -17,11 +17,12 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
+            android:id="@+id/txtScoreJogador"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="👤 Você: 0"
             android:textColor="@color/branco"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
@@ -36,13 +37,28 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/txtScoreAndroid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🤖 Android: 0"
             android:textColor="@color/branco"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
+
+    <!-- Botão Voltar ao Menu no topo esquerdo -->
+    <Button
+        android:id="@+id/btnMenu"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="48dp"
+        android:background="@drawable/btn_escuro"
+        android:text="≡"
+        android:textColor="@color/dourado"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Cartas do Android -->
     <LinearLayout
