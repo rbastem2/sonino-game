@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B5E30"
+    android:background="@color/verde_mesa"
     android:padding="24dp">
 
     <TextView
@@ -11,14 +11,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="SONINO"
-        android:textColor="#D4AF37"
-        android:textSize="56sp"
+        android:textColor="@color/dourado"
+        android:textSize="60sp"
         android:textStyle="bold"
         android:shadowColor="#000000"
         android:shadowDx="4"
         android:shadowDy="4"
-        android:shadowRadius="5"
-        app:layout_constraintBottom_toTopOf="@+id/btnJogar"
+        android:shadowRadius="8"
+        app:layout_constraintBottom_toTopOf="@+id/subtitulo"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="48dp"
         android:text="Tradição • Estratégia • Diversão"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/branco"
         android:textSize="16sp"
         android:textStyle="italic"
         app:layout_constraintBottom_toTopOf="@+id/btnJogar"
@@ -40,46 +40,52 @@
 
     <Button
         android:id="@+id/btnJogar"
-        android:layout_width="280dp"
-        android:layout_height="70dp"
-        android:backgroundTint="#D4AF37"
+        android:layout_width="300dp"
+        android:layout_height="75dp"
+        android:background="@drawable/btn_dourado"
         android:text="JOGAR"
         android:textColor="#000000"
-        android:textSize="24sp"
+        android:textSize="28sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/btnRegras"
+        app:layout_constraintBottom_toTopOf="@+id/gridBotoes"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/subtitulo" />
 
-    <Button
-        android:id="@+id/btnRegras"
-        android:layout_width="280dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="16dp"
-        android:backgroundTint="#1A1A1A"
-        android:text="REGRAS"
-        android:textColor="#D4AF37"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/btnConfig"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnJogar" />
-
-    <Button
-        android:id="@+id/btnConfig"
-        android:layout_width="280dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="16dp"
-        android:backgroundTint="#1A1A1A"
-        android:text="CONFIGURAÇÕES"
-        android:textColor="#D4AF37"
-        android:textSize="18sp"
-        android:textStyle="bold"
+    <LinearLayout
+        android:id="@+id/gridBotoes"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnRegras" />
+        app:layout_constraintTop_toBottomOf="@+id/btnJogar">
+
+        <Button
+            android:id="@+id/btnRegras"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/btn_escuro"
+            android:text="REGRAS"
+            android:textColor="@color/dourado"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnConfig"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/btn_escuro"
+            android:text="CONFIG"
+            android:textColor="@color/dourado"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

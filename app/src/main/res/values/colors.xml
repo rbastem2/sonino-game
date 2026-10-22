@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="verde_mesa">#063B1E</color>
+    <color name="dourado">#D4AF37</color>
+    <color name="dourado_escuro">#B8860B</color>
+    <color name="preto_fundo">#1A1A1A</color>
+    <color name="branco">#FFFFFF</color>
+    <color name="vermelho">#FF0000</color>
+</resources>

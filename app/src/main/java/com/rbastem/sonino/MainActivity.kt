@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var mesaAndroid: TextView
     lateinit var imgMesaJogador: ImageView
     lateinit var imgMesaAndroid: ImageView
+    lateinit var txtPlacarJogador: TextView
+    lateinit var txtPlacarAndroid: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
+            pontosJogador = 0
+            pontosAndroid = 0
             setContentView(R.layout.activity_game)
             configurarElementosTela()
             iniciarJogo()
@@ -63,9 +67,13 @@ class MainActivity : AppCompatActivity() {
         mesaAndroid = findViewById(R.id.cartaMesaAndroid)
         imgMesaJogador = findViewById(R.id.imgMesaJogador)
         imgMesaAndroid = findViewById(R.id.imgMesaAndroid)
+        
+        // Referências para os placares no topo (precisamos achar os textos)
+        val topo = findViewById<android.widget.LinearLayout>(R.id.topoPlacar)
+        txtPlacarJogador = topo.getChildAt(0) as TextView
+        txtPlacarAndroid = topo.getChildAt(2) as TextView
     }
 
-    // Função para buscar a imagem na pasta drawable
     fun getImagemCarta(carta: Carta): Int {
         val valorNome = carta.valor.lowercase()
         val naipeNome = when(carta.naipe) {
@@ -75,7 +83,6 @@ class MainActivity : AppCompatActivity() {
             "♣" -> "paus"
             else -> ""
         }
-        // O nome da imagem vai ser tipo: a_copas, 7_paus, k_espadas
         val nomeImagem = "${valorNome}_${naipeNome}"
         return resources.getIdentifier(nomeImagem, "drawable", packageName)
     }
@@ -90,17 +97,20 @@ class MainActivity : AppCompatActivity() {
 
         val idImagem = getImagemCarta(carta)
         if (idImagem != 0) {
-            // Se a imagem existe no projeto, mostra a imagem
             img.setImageResource(idImagem)
             img.visibility = ImageView.VISIBLE
             tv.visibility = TextView.GONE
         } else {
-            // Se não tem imagem, mostra o texto (fundo branco)
             img.visibility = ImageView.GONE
             tv.visibility = TextView.VISIBLE
             tv.text = carta.toString()
             tv.setTextColor(if (carta.naipe == "♥" || carta.naipe == "♦") Color.RED else Color.BLACK)
         }
+    }
+    
+    fun atualizarPlacar() {
+        txtPlacarJogador.text = "👤 Você: $pontosJogador"
+        txtPlacarAndroid.text = "🤖 Android: $pontosAndroid"
     }
 
     fun iniciarJogo() {
@@ -115,6 +125,7 @@ class MainActivity : AppCompatActivity() {
             maoAndroid.add(baralho.removeAt(0))
         }
         atualizarTela()
+        atualizarPlacar()
     }
 
     fun atualizarTela() {
@@ -181,6 +192,8 @@ class MainActivity : AppCompatActivity() {
 
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
         if (jogadorGanhou) pontosJogador += pontosRodada else pontosAndroid += pontosRodada
+        
+        atualizarPlacar()
 
         Handler(Looper.getMainLooper()).postDelayed({
             mostrarCarta(mesaJogador, imgMesaJogador, null)
@@ -207,7 +220,7 @@ class MainActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this).setTitle("SONINO").setMessage(mensagem).setCancelable(false)
             .setPositiveButton("Voltar ao Menu") { _, _ ->
-                pontosJogador = 0; pontosAndroid = 0; baralho.clear(); maoJogador.clear(); maoAndroid.clear(); mostrarMenuPrincipal()
+                mostrarMenuPrincipal()
             }.show()
     }
 }
