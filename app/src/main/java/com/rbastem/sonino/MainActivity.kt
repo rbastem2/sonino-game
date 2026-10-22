@@ -33,12 +33,32 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mostrarMenuPrincipal()
+    }
+
+    fun mostrarMenuPrincipal() {
         setContentView(R.layout.activity_main)
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
             setContentView(R.layout.activity_game)
             configurarElementosTela()
             iniciarJogo()
+        }
+
+        findViewById<Button>(R.id.btnRegras).setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Regras do SONINO")
+                .setMessage("1. Cada jogador recebe 3 cartas.\n\n2. O trunfo é definido pela última carta do baralho.\n\n3. Ganha a rodada a carta mais forte do trunfo, ou do naipe inicial.\n\n4. Quem ganha, leva os pontos (Ás=11, Sete=10, Rei=4, Valete=3, Dama=2).\n\n5. O vencedor é quem fizer 61 pontos ou mais no final.")
+                .setPositiveButton("Entendi", null)
+                .show()
+        }
+
+        findViewById<Button>(R.id.btnConfig).setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Configurações")
+                .setMessage("Em breve poderá escolher a dificuldade do Android aqui!")
+                .setPositiveButton("OK", null)
+                .show()
         }
     }
 
@@ -101,33 +121,25 @@ class MainActivity : AppCompatActivity() {
         }, 1000)
     }
 
-    // --- INTELIGÊNCIA ARTIFICIAL DO ANDROID ---
     fun androidPensa(cartaJogador: Carta) {
         if (maoAndroid.isEmpty()) return
         
-        var indexJogada = 0 // Por padrão, joga a primeira
-
-        // Lógica: Tentar achar uma carta que ganhe do jogador
+        var indexJogada = 0
         var cartaQueGanha = -1
         for (i in maoAndroid.indices) {
             val c = maoAndroid[i]
-            // Se for do mesmo naipe e mais forte
             if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
                 cartaQueGanha = i
                 break
-            } 
-            // Se o jogador não jogou trunfo, mas o Android tem um trunfo
-            else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
+            } else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
                 cartaQueGanha = i
                 break
             }
         }
 
         if (cartaQueGanha != -1) {
-            // Se achou uma carta que ganha, joga ela!
             indexJogada = cartaQueGanha
         } else {
-            // Se não pode ganhar, joga a carta de menor valor (0 pontos) para não dar pontos
             var menorValor = 100
             for (i in maoAndroid.indices) {
                 val p = pontosCartas[maoAndroid[i].valor] ?: 0
@@ -162,7 +174,7 @@ class MainActivity : AppCompatActivity() {
             } else if (cartaAndroid.naipe == trunfo) {
                 jogadorGanhou = false
             } else {
-                jogadorGanhou = true // O jogador jogou primeiro, ganha se ninguém jogou trunfo
+                jogadorGanhou = true 
             }
         }
 
@@ -206,10 +218,13 @@ class MainActivity : AppCompatActivity() {
             .setTitle("SONINO")
             .setMessage(mensagem)
             .setCancelable(false)
-            .setPositiveButton("Jogar Novamente") { _, _ ->
-                val intent = intent
-                finish()
-                startActivity(intent)
+            .setPositiveButton("Voltar ao Menu") { _, _ ->
+                pontosJogador = 0
+                pontosAndroid = 0
+                baralho.clear()
+                maoJogador.clear()
+                maoAndroid.clear()
+                mostrarMenuPrincipal()
             }
             .show()
     }

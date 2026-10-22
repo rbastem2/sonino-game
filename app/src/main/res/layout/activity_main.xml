@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B5E30">
+    android:background="#0B5E30"
+    android:padding="24dp">
 
     <TextView
         android:id="@+id/titulo"
@@ -11,27 +12,74 @@
         android:layout_height="wrap_content"
         android:text="SONINO"
         android:textColor="#D4AF37"
-        android:textSize="48sp"
+        android:textSize="56sp"
         android:textStyle="bold"
+        android:shadowColor="#000000"
+        android:shadowDx="4"
+        android:shadowDy="4"
+        android:shadowRadius="5"
         app:layout_constraintBottom_toTopOf="@+id/btnJogar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
 
-    <Button
-        android:id="@+id/btnJogar"
+    <TextView
+        android:id="@+id/subtitulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginBottom="48dp"
+        android:text="Tradição • Estratégia • Diversão"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="italic"
+        app:layout_constraintBottom_toTopOf="@+id/btnJogar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/titulo" />
+
+    <Button
+        android:id="@+id/btnJogar"
+        android:layout_width="280dp"
+        android:layout_height="70dp"
         android:backgroundTint="#D4AF37"
         android:text="JOGAR"
         android:textColor="#000000"
         android:textSize="24sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/btnRegras"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/subtitulo" />
+
+    <Button
+        android:id="@+id/btnRegras"
+        android:layout_width="280dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#1A1A1A"
+        android:text="REGRAS"
+        android:textColor="#D4AF37"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/btnConfig"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnJogar" />
+
+    <Button
+        android:id="@+id/btnConfig"
+        android:layout_width="280dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#1A1A1A"
+        android:text="CONFIGURAÇÕES"
+        android:textColor="#D4AF37"
+        android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/titulo" />
+        app:layout_constraintTop_toBottomOf="@+id/btnRegras" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
