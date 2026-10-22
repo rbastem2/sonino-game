@@ -17,7 +17,7 @@ data class Carta(val valor: String, val naipe: String) {
 
 class MainActivity : AppCompatActivity() {
     val naipes = listOf("♠", "♥", "♦", "♣")
-    val valores = listOf("A", "7", "K", "J", "Q", "10", "9", "8", "6", "5", "4", "3", "2")
+    val valores = listOf("A", "7", "K", "J", "Q", "6", "5", "4", "3", "2")
     
     var baralho = mutableListOf<Carta>()
     var maoJogador = mutableListOf<Carta>()
