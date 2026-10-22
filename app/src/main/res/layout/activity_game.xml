@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B5E30">
+
+    <!-- Cartas do Android (Topo) -->
+    <LinearLayout
+        android:id="@+id/areaAndroid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="60dp"
+            android:layout_height="90dp"
+            android:layout_margin="4dp"
+            android:background="#1A1A1A"
+            android:src="@android:drawable/ic_menu_help" />
+        <ImageView
+            android:layout_width="60dp"
+            android:layout_height="90dp"
+            android:layout_margin="4dp"
+            android:background="#1A1A1A"
+            android:src="@android:drawable/ic_menu_help" />
+        <ImageView
+            android:layout_width="60dp"
+            android:layout_height="90dp"
+            android:layout_margin="4dp"
+            android:background="#1A1A1A"
+            android:src="@android:drawable/ic_menu_help" />
+    </LinearLayout>
+
+    <!-- Mesa Central (Trunfo e Cartas Jogadas) -->
+    <TextView
+        android:id="@+id/txtTrunfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trunfo: --"
+        android:textColor="#D4AF37"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/areaMesa"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/areaAndroid" />
+
+    <LinearLayout
+        android:id="@+id/areaMesa"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#1A000000"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/areaJogador"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtTrunfo">
+
+        <ImageView
+            android:id="@+id/cartaMesaJogador"
+            android:layout_width="80dp"
+            android:layout_height="120dp"
+            android:layout_margin="8dp"
+            android:background="#FFFFFF" />
+            
+        <ImageView
+            android:id="@+id/cartaMesaAndroid"
+            android:layout_width="80dp"
+            android:layout_height="120dp"
+            android:layout_margin="8dp"
+            android:background="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Suas Cartas (Base) -->
+    <LinearLayout
+        android:id="@+id/areaJogador"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageView
+            android:id="@+id/cartaJogador1"
+            android:layout_width="70dp"
+            android:layout_height="105dp"
+            android:layout_margin="4dp"
+            android:background="#FFFFFF" />
+        <ImageView
+            android:id="@+id/cartaJogador2"
+            android:layout_width="70dp"
+            android:layout_height="105dp"
+            android:layout_margin="4dp"
+            android:background="#FFFFFF" />
+        <ImageView
+            android:id="@+id/cartaJogador3"
+            android:layout_width="70dp"
+            android:layout_height="105dp"
+            android:layout_margin="4dp"
+            android:background="#FFFFFF" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
