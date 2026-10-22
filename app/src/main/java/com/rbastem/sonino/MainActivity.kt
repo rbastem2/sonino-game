@@ -15,7 +15,6 @@ data class Carta(val valor: String, val naipe: String) {
 
 class MainActivity : AppCompatActivity() {
     val naipes = listOf("♠", "♥", "♦", "♣")
-    // Ordem de força (do mais forte para o mais fraco)
     val valores = listOf("A", "7", "K", "J", "Q", "10", "9", "8", "6", "5", "4", "3", "2")
     val pontosCartas = mapOf("A" to 11, "7" to 10, "K" to 4, "J" to 3, "Q" to 2)
     
@@ -26,9 +25,7 @@ class MainActivity : AppCompatActivity() {
     
     var pontosJogador = 0
     var pontosAndroid = 0
-    var jogadorComeca = true
 
-    // Elementos da tela
     lateinit var uiCartasJogador: List<TextView>
     lateinit var uiCartasAndroid: List<TextView>
     lateinit var mesaJogador: TextView
@@ -70,7 +67,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun atualizarTela() {
-        // Mostra a mão do jogador
         for (i in 0..2) {
             val tv = uiCartasJogador[i]
             if (i < maoJogador.size) {
@@ -84,7 +80,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Mostra a mão do Android (virada para baixo)
         for (i in 0..2) {
             uiCartasAndroid[i].text = if (i < maoAndroid.size) "?" else ""
             uiCartasAndroid[i].setTextColor(Color.WHITE)
@@ -98,20 +93,52 @@ class MainActivity : AppCompatActivity() {
         mesaJogador.text = cartaJogada.toString()
         mesaJogador.setTextColor(if (cartaJogada.naipe == "♥" || cartaJogada.naipe == "♦") Color.RED else Color.BLACK)
         
-        atualizarTela() // Esconde a carta jogada da mão
-
-        // Desativa cliques enquanto o Android joga
+        atualizarTela()
         uiCartasJogador.forEach { it.setOnClickListener(null) }
 
         Handler(Looper.getMainLooper()).postDelayed({
-            jogarAndroid(cartaJogada)
-        }, 1000) // Espera 1 segundo
+            androidPensa(cartaJogada)
+        }, 1000)
     }
 
-    fun jogarAndroid(cartaJogador: Carta) {
+    // --- INTELIGÊNCIA ARTIFICIAL DO ANDROID ---
+    fun androidPensa(cartaJogador: Carta) {
         if (maoAndroid.isEmpty()) return
         
-        val cartaAndroid = maoAndroid.removeAt(0)
+        var indexJogada = 0 // Por padrão, joga a primeira
+
+        // Lógica: Tentar achar uma carta que ganhe do jogador
+        var cartaQueGanha = -1
+        for (i in maoAndroid.indices) {
+            val c = maoAndroid[i]
+            // Se for do mesmo naipe e mais forte
+            if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
+                cartaQueGanha = i
+                break
+            } 
+            // Se o jogador não jogou trunfo, mas o Android tem um trunfo
+            else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
+                cartaQueGanha = i
+                break
+            }
+        }
+
+        if (cartaQueGanha != -1) {
+            // Se achou uma carta que ganha, joga ela!
+            indexJogada = cartaQueGanha
+        } else {
+            // Se não pode ganhar, joga a carta de menor valor (0 pontos) para não dar pontos
+            var menorValor = 100
+            for (i in maoAndroid.indices) {
+                val p = pontosCartas[maoAndroid[i].valor] ?: 0
+                if (p < menorValor) {
+                    menorValor = p
+                    indexJogada = i
+                }
+            }
+        }
+
+        val cartaAndroid = maoAndroid.removeAt(indexJogada)
         mesaAndroid.text = cartaAndroid.toString()
         mesaAndroid.setTextColor(if (cartaAndroid.naipe == "♥" || cartaAndroid.naipe == "♦") Color.RED else Color.BLACK)
         
@@ -119,45 +146,37 @@ class MainActivity : AppCompatActivity() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             avaliarRodada(cartaJogador, cartaAndroid)
-        }, 1500) // Espera 1.5 segundos para o jogador ver as cartas na mesa
+        }, 1500)
     }
 
     fun avaliarRodada(cartaJogador: Carta, cartaAndroid: Carta) {
         var jogadorGanhou = false
 
         if (cartaJogador.naipe == cartaAndroid.naipe) {
-            // Mesmo naipe: a mais forte ganha
             if (valores.indexOf(cartaJogador.valor) < valores.indexOf(cartaAndroid.valor)) {
                 jogadorGanhou = true
             }
         } else {
-            // Naipes diferentes: verifica o trunfo
             if (cartaJogador.naipe == trunfo) {
                 jogadorGanhou = true
             } else if (cartaAndroid.naipe == trunfo) {
                 jogadorGanhou = false
             } else {
-                // Ninguém jogou trunfo: o jogador que começou ganha (simplificação)
-                jogadorGanhou = jogadorComeca
+                jogadorGanhou = true // O jogador jogou primeiro, ganha se ninguém jogou trunfo
             }
         }
 
-        // Soma os pontos
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
         if (jogadorGanhou) {
             pontosJogador += pontosRodada
-            jogadorComeca = true
         } else {
             pontosAndroid += pontosRodada
-            jogadorComeca = false
         }
 
-        // Limpa a mesa após 1 segundo
         Handler(Looper.getMainLooper()).postDelayed({
             mesaJogador.text = ""
             mesaAndroid.text = ""
             
-            // Compra cartas
             if (baralho.isNotEmpty()) {
                 if (jogadorGanhou) {
                     maoJogador.add(baralho.removeAt(0))
@@ -170,12 +189,8 @@ class MainActivity : AppCompatActivity() {
 
             atualizarTela()
 
-            // Verifica fim de jogo
             if (maoJogador.isEmpty() && maoAndroid.isEmpty()) {
                 finalizarJogo()
-            } else if (!jogadorComeca) {
-                // Se o Android ganhou, ele "pensa" e joga primeiro (para simplificar, o jogador ainda clica)
-                // Futuramente podemos fazer o Android iniciar a rodada automaticamente
             }
 
         }, 1000)
@@ -192,7 +207,6 @@ class MainActivity : AppCompatActivity() {
             .setMessage(mensagem)
             .setCancelable(false)
             .setPositiveButton("Jogar Novamente") { _, _ ->
-                // Reinicia o app
                 val intent = intent
                 finish()
                 startActivity(intent)
