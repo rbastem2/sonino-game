@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.view.animation.OvershootInterpolator
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -38,8 +37,8 @@ class MainActivity : AppCompatActivity() {
     
     var jogadorComeca = true
     var dificuldade = "Difícil"
+    var somAtivado = true
 
-    var cartasJaJogadas = mutableListOf<Carta>()
     private var toneG: ToneGenerator? = null
 
     lateinit var uiCartasJogador: List<TextView>
@@ -56,8 +55,10 @@ class MainActivity : AppCompatActivity() {
     lateinit var imgTrunfoMesa: ImageView
     lateinit var txtTrunfoMesa: TextView
     lateinit var txtFeedbackRodada: TextView
+    lateinit var btnSom: Button
     
     var cartaAndroidJogada: Carta? = null
+    private var isJogoAtivo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,11 +67,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        isJogoAtivo = false
         toneG?.release()
         super.onDestroy()
     }
 
+    fun tocarSom(tipo: Int, duracao: Int) {
+        if (somAtivado) toneG?.startTone(tipo, duracao)
+    }
+
     fun mostrarMenuPrincipal() {
+        isJogoAtivo = false
         setContentView(R.layout.activity_main)
         trunfo = ""
 
@@ -103,10 +110,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun iniciarNovaPartida() {
+        isJogoAtivo = true
         pontosJogador = 0
         pontosAndroid = 0
         jogadorComeca = true
-        cartasJaJogadas.clear()
         setContentView(R.layout.activity_game)
         configurarElementosTela()
         iniciarRodada()
@@ -116,6 +123,12 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("Sim") { _, _ -> mostrarMenuPrincipal() }
                 .setNegativeButton("Não", null).show()
         }
+        
+        btnSom.setOnClickListener {
+            somAtivado = !somAtivado
+            btnSom.text = if (somAtivado) "🔊" else "🔇"
+        }
+        btnSom.text = if (somAtivado) "🔊" else "🔇"
     }
 
     fun configurarElementosTela() {
@@ -133,6 +146,7 @@ class MainActivity : AppCompatActivity() {
         imgTrunfoMesa = findViewById(R.id.imgTrunfoMesa)
         txtTrunfoMesa = findViewById(R.id.txtTrunfoMesa)
         txtFeedbackRodada = findViewById(R.id.txtFeedbackRodada)
+        btnSom = findViewById(R.id.btnSom)
     }
 
     fun getImagemCarta(carta: Carta): Int {
@@ -148,9 +162,6 @@ class MainActivity : AppCompatActivity() {
         val idImagem = getImagemCarta(carta)
         if (idImagem != 0) {
             img.setImageResource(idImagem); img.visibility = ImageView.VISIBLE; tv.visibility = TextView.GONE
-            // Animação de entrada (zoom)
-            img.scaleX = 0.8f; img.scaleY = 0.8f
-            img.animate().scaleX(1f).scaleY(1f).setDuration(300).setInterpolator(OvershootInterpolator()).start()
         } else {
             img.visibility = ImageView.GONE; tv.visibility = TextView.VISIBLE
             tv.text = carta.toString()
@@ -162,17 +173,6 @@ class MainActivity : AppCompatActivity() {
         txtScoreJogador.text = "$pontosJogador pts"
         txtScoreAndroid.text = "$pontosAndroid pts"
         txtPartidas.text = "$partidasJogador x $partidasAndroid"
-    }
-
-    fun mostrarFeedback(texto: String) {
-        txtFeedbackRodada.text = texto
-        txtFeedbackRodada.visibility = View.VISIBLE
-        txtFeedbackRodada.alpha = 0f
-        txtFeedbackRodada.animate().alpha(1f).setDuration(300).withEndAction {
-            Handler(Looper.getMainLooper()).postDelayed({
-                txtFeedbackRodada.animate().alpha(0f).setDuration(300).withEndAction { txtFeedbackRodada.visibility = View.GONE }
-            }, 1000)
-        }.start()
     }
 
     fun iniciarRodada() {
@@ -206,8 +206,8 @@ class MainActivity : AppCompatActivity() {
         if (isFirstDeal) {
             habilitarCliquesJogador(false)
             animarDistribuicao()
-            // Espera a animação terminar (6 cartas * 150ms + 500ms de duração) antes de liberar o jogo
             Handler(Looper.getMainLooper()).postDelayed({
+                if (!isJogoAtivo) return@postDelayed
                 if (jogadorComeca) habilitarCliquesJogador(true)
                 else androidJogaPrimeiro()
             }, 1600)
@@ -216,14 +216,16 @@ class MainActivity : AppCompatActivity() {
                 habilitarCliquesJogador(true)
             } else {
                 habilitarCliquesJogador(false)
-                Handler(Looper.getMainLooper()).postDelayed({ androidJogaPrimeiro() }, 1000)
+                Handler(Looper.getMainLooper()).postDelayed({ 
+                    if (isJogoAtivo) androidJogaPrimeiro() 
+                }, 1000)
             }
         }
     }
 
     fun animarDistribuicao() {
-        // Pequeno delay para garantir que as views foram desenhadas na tela
         Handler(Looper.getMainLooper()).postDelayed({
+            if (!isJogoAtivo) return@postDelayed
             val startLoc = IntArray(2)
             imgMonte.getLocationOnScreen(startLoc)
             val startX = startLoc[0].toFloat()
@@ -237,12 +239,10 @@ class MainActivity : AppCompatActivity() {
                 val targetX = cardLoc[0].toFloat()
                 val targetY = cardLoc[1].toFloat()
 
-                // Move a carta para a posição do monte
                 cardView.translationX = startX - targetX
                 cardView.translationY = startY - targetY
                 cardView.alpha = 0f
 
-                // Anima de volta para a posição original
                 cardView.animate()
                     .translationX(0f)
                     .translationY(0f)
@@ -254,14 +254,10 @@ class MainActivity : AppCompatActivity() {
                 delayAnim += 150
             }
 
-            // Anima as cartas do jogador
             uiImgsJogador.forEach { if (it.visibility == View.VISIBLE) jogarCartaAnimada(it) }
-            
-            // Anima as cartas do Android
             uiImgsAndroid.forEach { if (it.visibility == View.VISIBLE) jogarCartaAnimada(it) }
 
-            // Som de distribuição
-            toneG?.startTone(ToneGenerator.TONE_PROP_BEEP2, 200)
+            tocarSom(ToneGenerator.TONE_PROP_BEEP2, 200)
 
         }, 100)
     }
@@ -292,24 +288,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun jogarCarta(index: Int) {
-        if (maoJogador.size <= index) return
+        if (maoJogador.size <= index || !isJogoAtivo) return
         habilitarCliquesJogador(false)
         
-        toneG?.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+        tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
 
         val cartaJogada = maoJogador.removeAt(index)
         mostrarCarta(mesaJogador, imgMesaJogador, cartaJogada)
         atualizarTela()
 
         if (cartaAndroidJogada != null) {
-            Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogada, cartaAndroidJogada!!, false) }, 800)
+            Handler(Looper.getMainLooper()).postDelayed({ 
+                if (isJogoAtivo) avaliarRodada(cartaJogada, cartaAndroidJogada!!, false) 
+            }, 800)
         } else {
-            Handler(Looper.getMainLooper()).postDelayed({ androidResponde(cartaJogada) }, 1000)
+            Handler(Looper.getMainLooper()).postDelayed({ 
+                if (isJogoAtivo) androidResponde(cartaJogada) 
+            }, 1000)
         }
     }
 
     fun androidJogaPrimeiro() {
-        if (maoAndroid.isEmpty()) return
+        if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
         var indexJogada = 0
         if (dificuldade == "Fácil") {
@@ -322,7 +322,7 @@ class MainActivity : AppCompatActivity() {
              }
         }
 
-        toneG?.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+        tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
         cartaAndroidJogada = maoAndroid.removeAt(indexJogada)
         mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroidJogada)
         atualizarTela()
@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun androidResponde(cartaJogador: Carta) {
-        if (maoAndroid.isEmpty()) return
+        if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
         var indexJogada = 0
         
@@ -351,7 +351,6 @@ class MainActivity : AppCompatActivity() {
             if (cartaQueGanha != -1) { 
                 indexJogada = cartaQueGanha 
             } else {
-                // IA Mestre: Tenta descartar a menor carta
                 var menorValor = 100
                 for (i in maoAndroid.indices) {
                     val p = pontosCartas[maoAndroid[i].valor] ?: 0
@@ -361,12 +360,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         Handler(Looper.getMainLooper()).postDelayed({
-            toneG?.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+            if (!isJogoAtivo) return@postDelayed
+            tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
             val cartaAndroid = maoAndroid.removeAt(indexJogada)
             mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroid)
             atualizarTela()
 
-            Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogador, cartaAndroid, true) }, 1000)
+            Handler(Looper.getMainLooper()).postDelayed({ 
+                if (isJogoAtivo) avaliarRodada(cartaJogador, cartaAndroid, true) 
+            }, 1000)
         }, 500)
     }
 
@@ -381,22 +383,18 @@ class MainActivity : AppCompatActivity() {
             else jogadorGanhou = jogadorFoiPrimeiro 
         }
 
-        cartasJaJogadas.add(cartaJogador)
-        cartasJaJogadas.add(cartaAndroid)
-
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
         if (jogadorGanhou) {
             pontosJogador += pontosRodada
-            mostrarFeedback("Você ganhou a rodada! (+$pontosRodada pts)")
         } else {
             pontosAndroid += pontosRodada
-            mostrarFeedback("Android ganhou a rodada! (+$pontosRodada pts)")
         }
         
         jogadorComeca = jogadorGanhou 
         atualizarPlacar()
 
         Handler(Looper.getMainLooper()).postDelayed({
+            if (!isJogoAtivo) return@postDelayed
             mostrarCarta(mesaJogador, imgMesaJogador, null)
             mostrarCarta(mesaAndroid, imgMesaAndroid, null)
             
@@ -419,48 +417,66 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun finalizarPartida() {
+        if (!isJogoAtivo) return
+        
         var mensagem = ""
         if (pontosJogador >= 61 && pontosJogador > pontosAndroid) {
             partidasJogador++
-            mensagem = "Você ganhou a partida com $pontosJogador pontos!"
-            toneG?.startTone(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
+            mensagem = "Você ganhou a partida!"
+            tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
         } else if (pontosAndroid >= 61 && pontosAndroid > pontosJogador) {
             partidasAndroid++
-            mensagem = "O Android ganhou a partida com $pontosAndroid pontos!"
-            toneG?.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000)
+            mensagem = "O Android ganhou a partida!"
+            tocarSom(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000)
         } else if (pontosJogador == 60 && pontosAndroid == 60) {
-            mensagem = "Empate na partida (60x60)!"
+            mensagem = "Empate na partida!"
         } else {
             if (pontosJogador > pontosAndroid) {
                 partidasJogador++
-                mensagem = "Você ganhou por ter mais pontos ($pontosJogador a $pontosAndroid)!"
+                mensagem = "Você ganhou a partida!"
             } else {
                 partidasAndroid++
-                mensagem = "O Android ganhou por ter mais pontos ($pontosAndroid a $pontosJogador)!"
+                mensagem = "O Android ganhou a partida!"
             }
         }
+        
+        atualizarPlacar()
+        mostrarFeedback(mensagem)
 
-        if (partidasJogador == 2 || partidasAndroid == 2) {
-            val vencedorFinal = if (partidasJogador == 2) "VOCÊ" else "ANDROID"
-            val msgFinal = "$mensagem\n\nFIM DO TORNEIO!\n\n$vencedorFinal venceu o jogo por ${partidasJogador} a ${partidasAndroid}."
+        // Aguarda alguns segundos para mostrar a mensagem antes de continuar
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!isJogoAtivo) return@postDelayed
             
-            val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
-            val dataAtual = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
-            val historicoAntigo = prefs.getString("historico", "") ?: ""
-            val novoHistorico = "$dataAtual - $vencedorFinal venceu ($partidasJogador-$partidasAndroid)\n$historicoAntigo"
-            prefs.edit().putString("historico", novoHistorico).apply()
+            if (partidasJogador == 2 || partidasAndroid == 2) {
+                val vencedorFinal = if (partidasJogador == 2) "VOCÊ VENCEU O TORNEIO!" else "O ANDROID VENCEU O TORNEIO!"
+                mostrarFeedback(vencedorFinal)
+                tocarSom(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
+                
+                // Salvar no histórico
+                val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
+                val dataAtual = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                val historicoAntigo = prefs.getString("historico", "") ?: ""
+                val novoHistorico = "$dataAtual - ${if (partidasJogador == 2) "VOCÊ" else "ANDROID"} venceu ($partidasJogador-$partidasAndroid)\n$historicoAntigo"
+                prefs.edit().putString("historico", novoHistorico).apply()
+                
+                // Espera mais um pouco e volta ao menu
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (isJogoAtivo) mostrarMenuPrincipal()
+                }, 4000)
+                
+            } else {
+                baralho.clear()
+                maoJogador.clear()
+                maoAndroid.clear()
+                iniciarNovaPartida() 
+            }
+        }, 4000) // Tempo que a mensagem da partida fica na tela
+    }
 
-            AlertDialog.Builder(this).setTitle("Fim do Torneio").setMessage(msgFinal).setCancelable(false)
-                .setPositiveButton("Menu Principal") { _, _ -> mostrarMenuPrincipal() }.show()
-        } else {
-            val msgProx = "$mensagem\n\nPlacar do Torneio: Você $partidasJogador x $partidasAndroid Android\n\nPróxima partida!"
-            AlertDialog.Builder(this).setTitle("Fim da Partida").setMessage(msgProx).setCancelable(false)
-                .setPositiveButton("Continuar") { _, _ -> 
-                    baralho.clear()
-                    maoJogador.clear()
-                    maoAndroid.clear()
-                    iniciarNovaPartida() 
-                }.show()
-        }
+    fun mostrarFeedback(texto: String) {
+        txtFeedbackRodada.text = texto
+        txtFeedbackRodada.visibility = View.VISIBLE
+        txtFeedbackRodada.alpha = 0f
+        txtFeedbackRodada.animate().alpha(1f).setDuration(300).start()
     }
 }

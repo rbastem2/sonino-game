@@ -72,6 +72,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
+    <!-- Botão de Som (Canto Direito) -->
+    <Button
+        android:id="@+id/btnSom"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/btn_escuro"
+        android:text="🔊"
+        android:textColor="@color/dourado"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
+
     <!-- Cartas do Android -->
     <LinearLayout
         android:id="@+id/areaAndroid"
@@ -131,16 +144,17 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Feedback de Rodada -->
+    <!-- Feedback de Fim de Jogo (Maior e Central) -->
     <TextView
         android:id="@+id/txtFeedbackRodada"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_escuro"
-        android:padding="12dp"
+        android:padding="24dp"
         android:textColor="@color/dourado"
-        android:textSize="18sp"
+        android:textSize="24sp"
         android:textStyle="bold"
+        android:textAlignment="center"
         android:elevation="10dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
