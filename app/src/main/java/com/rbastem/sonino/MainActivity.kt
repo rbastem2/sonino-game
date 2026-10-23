@@ -21,15 +21,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.doOnLayout
-
+import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.fullscreen.FullScreenContentCallback
-
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class Carta(val valor: String, val naipe: String) {
     override fun toString(): String { return "$valor $naipe" }
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     var somAtivado = true
 
     private var toneG: ToneGenerator? = null
+    private var mInterstitialAd: InterstitialAd? = null
 
     lateinit var uiCartasJogador: List<TextView>
     lateinit var uiImgsJogador: List<ImageView>
@@ -78,7 +80,6 @@ class MainActivity : AppCompatActivity() {
     var cartaAndroidJogada: Carta? = null
     var cartaJogadorJogada: Carta? = null
     private var isJogoAtivo = false
-    private var mInterstitialAd: InterstitialAd? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -87,6 +88,8 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+        
+        // Inicializa AdMob
         MobileAds.initialize(this) {}
         carregarAnuncio()
         
@@ -137,7 +140,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     fun carregarAnuncio() {
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(this, "ca-app-pub-3940256099942544/1033173712", adRequest,
@@ -153,13 +155,13 @@ class MainActivity : AppCompatActivity() {
 
     fun mostrarAnuncio(aoFechar: () -> Unit) {
         if (mInterstitialAd != null) {
-            mInterstitialAd?.fullScreenContentCallback = object: FullScreenContentCallback() {
+            mInterstitialAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     mInterstitialAd = null
-                    carregarAnuncio() // Prepara o próximo
+                    carregarAnuncio()
                     aoFechar()
                 }
-                override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError?) {
+                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                     mInterstitialAd = null
                     carregarAnuncio()
                     aoFechar()
@@ -167,13 +169,51 @@ class MainActivity : AppCompatActivity() {
             }
             mInterstitialAd?.show(this)
         } else {
-            aoFechar() // Se o anúncio ainda não carregou, segue o jogo normal
+            aoFechar()
         }
     }
 
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
         setContentView(R.layout.activity_main)
+
+        findViewById<ImageButton>(R.id.btnBonusDiario).setOnClickListener {
+            vibrar()
+            val prefs = getSharedPreferences("sonino_bonus", Context.MODE_PRIVATE)
+            val dataHoje = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+            val ultimaData = prefs.getString("ultima_data", "") ?: ""
+            
+            if (ultimaData == dataHoje) {
+                AlertDialog.Builder(this)
+                    .setTitle("Bónus Diário")
+                    .setMessage("Você já resgatou o seu bónus hoje! Volte amanhã para continuar a sequência.")
+                    .setPositiveButton("OK", null).show()
+            } else {
+                var sequencia = prefs.getInt("sequencia", 0)
+                val dataOntem = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
+                
+                if (ultimaData == dataOntem) {
+                    sequencia++
+                } else {
+                    sequencia = 1
+                }
+                
+                val pontosBonus = sequencia * 50
+                
+                val statsPrefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
+                val totalAtual = statsPrefs.getInt("total_pontos", 0)
+                statsPrefs.edit().putInt("total_pontos", totalAtual + pontosBonus).apply()
+                
+                prefs.edit().putString("ultima_data", dataHoje).putInt("sequencia", sequencia).apply()
+                
+                AlertDialog.Builder(this)
+                    .setTitle("Bónus Diário (Dia $sequencia)")
+                    .setMessage("Você ganhou $pontosBonus pontos! Volte amanhã para ganhar ainda mais.")
+                    .setPositiveButton("Receber", null).show()
+                    
+                tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
+            }
+        }
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
             vibrar()
@@ -240,48 +280,6 @@ class MainActivity : AppCompatActivity() {
             vibrar()
             mostrarEstatisticas()
         }
-
-        findViewById<ImageButton>(R.id.btnBonusDiario).setOnClickListener {
-            vibrar()
-            val prefs = getSharedPreferences("sonino_bonus", Context.MODE_PRIVATE)
-            val dataHoje = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-            val ultimaData = prefs.getString("ultima_data", "") ?: ""
-            
-            if (ultimaData == dataHoje) {
-                AlertDialog.Builder(this)
-                    .setTitle("Bónus Diário")
-                    .setMessage("Você já resgatou o seu bónus hoje! Volte amanhã para continuar a sequência.")
-                    .setPositiveButton("OK", null).show()
-            } else {
-                var sequencia = prefs.getInt("sequencia", 0)
-                val dataOntem = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
-                
-                if (ultimaData == dataOntem) {
-                    sequencia++
-                } else {
-                    sequencia = 1
-                }
-                
-                val pontosBonus = sequencia * 50 // 50 pontos por dia consecutivo
-                
-                // Adiciona os pontos ao total de estatísticas
-                val statsPrefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
-                val totalAtual = statsPrefs.getInt("total_pontos", 0)
-                statsPrefs.edit().putInt("total_pontos", totalAtual + pontosBonus).apply()
-                
-                // Salva a nova data e sequência
-                prefs.edit().putString("ultima_data", dataHoje).putInt("sequencia", sequencia).apply()
-                
-                AlertDialog.Builder(this)
-                    .setTitle("🎁 Bónus Diário (Dia $sequencia)")
-                    .setMessage("Você ganhou $pontosBonus pontos!
-Volte amanhã para ganhar ainda mais.")
-                    .setPositiveButton("Receber", null).show()
-                    
-                tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
-            }
-        }
-
     }
 
     fun configurarBotoesDeJogo() {
@@ -858,7 +856,10 @@ Volte amanhã para ganhar ainda mais.")
                 getSharedPreferences("sonino_save", Context.MODE_PRIVATE).edit().clear().apply()
 
                 Handler(Looper.getMainLooper()).postDelayed({
-                    if (isJogoAtivo) mostrarAnuncio { mostrarMenuPrincipal() }
+                    if (isJogoAtivo) {
+                        // CHAMA O ANÚNCIO ANTES DE VOLTAR AO MENU
+                        mostrarAnuncio { mostrarMenuPrincipal() }
+                    }
                 }, 4000)
                 
             } else {
