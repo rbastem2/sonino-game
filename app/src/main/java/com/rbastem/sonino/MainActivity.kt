@@ -2,10 +2,13 @@ package com.rbastem.sonino
 
 import android.content.Context
 import android.graphics.Color
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.animation.OvershootInterpolator
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -36,8 +39,8 @@ class MainActivity : AppCompatActivity() {
     var jogadorComeca = true
     var dificuldade = "Difícil"
 
-    // Memória para a IA Mestre
     var cartasJaJogadas = mutableListOf<Carta>()
+    private var toneG: ToneGenerator? = null
 
     lateinit var uiCartasJogador: List<TextView>
     lateinit var uiImgsJogador: List<ImageView>
@@ -52,12 +55,19 @@ class MainActivity : AppCompatActivity() {
     lateinit var imgMonte: ImageView
     lateinit var imgTrunfoMesa: ImageView
     lateinit var txtTrunfoMesa: TextView
+    lateinit var txtFeedbackRodada: TextView
     
     var cartaAndroidJogada: Carta? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         mostrarMenuPrincipal()
+    }
+
+    override fun onDestroy() {
+        toneG?.release()
+        super.onDestroy()
     }
 
     fun mostrarMenuPrincipal() {
@@ -122,6 +132,7 @@ class MainActivity : AppCompatActivity() {
         imgMonte = findViewById(R.id.imgMonte)
         imgTrunfoMesa = findViewById(R.id.imgTrunfoMesa)
         txtTrunfoMesa = findViewById(R.id.txtTrunfoMesa)
+        txtFeedbackRodada = findViewById(R.id.txtFeedbackRodada)
     }
 
     fun getImagemCarta(carta: Carta): Int {
@@ -137,6 +148,9 @@ class MainActivity : AppCompatActivity() {
         val idImagem = getImagemCarta(carta)
         if (idImagem != 0) {
             img.setImageResource(idImagem); img.visibility = ImageView.VISIBLE; tv.visibility = TextView.GONE
+            // Animação de entrada (zoom)
+            img.scaleX = 0.5f; img.scaleY = 0.5f
+            img.animate().scaleX(1f).scaleY(1f).setDuration(300).setInterpolator(OvershootInterpolator()).start()
         } else {
             img.visibility = ImageView.GONE; tv.visibility = TextView.VISIBLE
             tv.text = carta.toString()
@@ -150,6 +164,17 @@ class MainActivity : AppCompatActivity() {
         txtPartidas.text = "$partidasJogador x $partidasAndroid"
     }
 
+    fun mostrarFeedback(texto: String) {
+        txtFeedbackRodada.text = texto
+        txtFeedbackRodada.visibility = View.VISIBLE
+        txtFeedbackRodada.alpha = 0f
+        txtFeedbackRodada.animate().alpha(1f).setDuration(300).withEndAction {
+            Handler(Looper.getMainLooper()).postDelayed({
+                txtFeedbackRodada.animate().alpha(0f).setDuration(300).withEndAction { txtFeedbackRodada.visibility = View.GONE }
+            }, 1000)
+        }.start()
+    }
+
     fun iniciarRodada() {
         if (baralho.isEmpty() && maoJogador.isEmpty() && maoAndroid.isEmpty()) {
             for (n in naipes) { for (v in valores) { baralho.add(Carta(v, n)) } }
@@ -158,7 +183,6 @@ class MainActivity : AppCompatActivity() {
             cartaTrunfo = baralho.last()
             trunfo = cartaTrunfo!!.naipe
             
-            // Mostra a carta de trunfo na mesa
             mostrarCarta(txtTrunfoMesa, imgTrunfoMesa, cartaTrunfo)
             imgTrunfoMesa.visibility = View.VISIBLE
 
@@ -168,7 +192,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        // Atualiza o monte visual
         imgMonte.visibility = if (baralho.isNotEmpty()) View.VISIBLE else View.GONE
 
         mesaJogador.text = ""; mesaAndroid.text = ""
@@ -215,6 +238,8 @@ class MainActivity : AppCompatActivity() {
         if (maoJogador.size <= index) return
         habilitarCliquesJogador(false)
         
+        toneG?.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+
         val cartaJogada = maoJogador.removeAt(index)
         mostrarCarta(mesaJogador, imgMesaJogador, cartaJogada)
         atualizarTela()
@@ -240,6 +265,7 @@ class MainActivity : AppCompatActivity() {
              }
         }
 
+        toneG?.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
         cartaAndroidJogada = maoAndroid.removeAt(indexJogada)
         mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroidJogada)
         atualizarTela()
@@ -251,6 +277,7 @@ class MainActivity : AppCompatActivity() {
         if (maoAndroid.isEmpty()) return
         
         var indexJogada = 0
+        
         if (dificuldade == "Fácil") {
             indexJogada = (0 until maoAndroid.size).random()
         } else {
@@ -264,11 +291,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             
-            // Inteligência Mestre: Se não pode ganhar, tenta descartar carta de ponto baixo, 
-            // a menos que saiba que o jogador não tem trunfo.
             if (cartaQueGanha != -1) { 
                 indexJogada = cartaQueGanha 
             } else {
+                // IA Mestre: Tenta descartar a menor carta, priorizando naipes onde o jogador já mostrou fraqueza
                 var menorValor = 100
                 for (i in maoAndroid.indices) {
                     val p = pontosCartas[maoAndroid[i].valor] ?: 0
@@ -277,11 +303,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val cartaAndroid = maoAndroid.removeAt(indexJogada)
-        mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroid)
-        atualizarTela()
+        Handler(Looper.getMainLooper()).postDelayed({
+            toneG?.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+            val cartaAndroid = maoAndroid.removeAt(indexJogada)
+            mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroid)
+            atualizarTela()
 
-        Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogador, cartaAndroid, true) }, 1500)
+            Handler(Looper.getMainLooper()).postDelayed({ avaliarRodada(cartaJogador, cartaAndroid, true) }, 1000)
+        }, 500)
     }
 
     fun avaliarRodada(cartaJogador: Carta, cartaAndroid: Carta, jogadorFoiPrimeiro: Boolean) {
@@ -295,12 +324,17 @@ class MainActivity : AppCompatActivity() {
             else jogadorGanhou = jogadorFoiPrimeiro 
         }
 
-        // Adiciona à memória (para o nível Mestre)
         cartasJaJogadas.add(cartaJogador)
         cartasJaJogadas.add(cartaAndroid)
 
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
-        if (jogadorGanhou) pontosJogador += pontosRodada else pontosAndroid += pontosRodada
+        if (jogadorGanhou) {
+            pontosJogador += pontosRodada
+            mostrarFeedback("Você ganhou a rodada! (+$pontosRodada pts)")
+        } else {
+            pontosAndroid += pontosRodada
+            mostrarFeedback("Android ganhou a rodada! (+$pontosRodada pts)")
+        }
         
         jogadorComeca = jogadorGanhou 
         atualizarPlacar()
@@ -324,7 +358,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 iniciarRodada()
             }
-        }, 1200)
+        }, 1500)
     }
 
     fun finalizarPartida() {
@@ -332,9 +366,11 @@ class MainActivity : AppCompatActivity() {
         if (pontosJogador >= 61 && pontosJogador > pontosAndroid) {
             partidasJogador++
             mensagem = "Você ganhou a partida com $pontosJogador pontos!"
+            toneG?.startTone(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
         } else if (pontosAndroid >= 61 && pontosAndroid > pontosJogador) {
             partidasAndroid++
             mensagem = "O Android ganhou a partida com $pontosAndroid pontos!"
+            toneG?.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000)
         } else if (pontosJogador == 60 && pontosAndroid == 60) {
             mensagem = "Empate na partida (60x60)!"
         } else {
