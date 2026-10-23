@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     var jogadorComeca = true // Define quem joga a primeira carta da rodada
     var dificuldade = "Difícil" // Nível da IA
     var somAtivado = true
+    var vibracaoAtivada = true
 
     // --- FERRAMENTAS DE SISTEMA ---
     private var toneG: ToneGenerator? = null // Gerador de som nativo
@@ -91,7 +92,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var imgTrunfoMesa: ImageView
     lateinit var txtTrunfoMesa: TextView
     lateinit var txtFeedbackRodada: TextView
-    lateinit var btnSom: ImageButton
+    lateinit var btnSom: Button
+    lateinit var btnVibracao: Button
     
     // Cartas temporárias na mesa (para controle de estado)
     var cartaAndroidJogada: Carta? = null
@@ -154,7 +156,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Faz o telemóvel vibrar (Compatível com todas as versões do Android) */
-    fun vibrar(duracao: Long = 100) {
+    fun vibrar(duracao: Long = 50) {
+        if (!vibracaoAtivada) return
         try {
             val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -164,10 +167,9 @@ class MainActivity : AppCompatActivity() {
                 getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             }
             if (vibrator.hasVibrator()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(duracao, VibrationEffect.DEFAULT_AMPLITUDE))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // Amplitude 255 força a vibração máxima ignorando configurações do sistema
+                    vibrator.vibrate(VibrationEffect.createOneShot(duracao, 255))
                 } else {
                     @Suppress("DEPRECATION")
                     vibrator.vibrate(duracao)
@@ -351,9 +353,16 @@ class MainActivity : AppCompatActivity() {
         btnSom.setOnClickListener {
             vibrar()
             somAtivado = !somAtivado
-            btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
+            btnSom.text = if (somAtivado) "🔊" else "🔇"
         }
-        btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
+        btnSom.text = if (somAtivado) "🔊" else "🔇"
+
+        btnVibracao.setOnClickListener {
+            vibracaoAtivada = !vibracaoAtivada
+            btnVibracao.text = if (vibracaoAtivada) "📳" else "📴"
+            if (vibracaoAtivada) vibrar(100) // Dá um feedback ao ligar
+        }
+        btnVibracao.text = if (vibracaoAtivada) "📳" else "📴" 
     }
 
     // =================================================================================
@@ -546,6 +555,7 @@ class MainActivity : AppCompatActivity() {
         txtTrunfoMesa = findViewById(R.id.txtTrunfoMesa)
         txtFeedbackRodada = findViewById(R.id.txtFeedbackRodada)
         btnSom = findViewById(R.id.btnSom)
+        btnVibracao = findViewById(R.id.btnVibracao)
     }
 
     /** Procura a imagem da carta na pasta drawable. Ex: "a_copas" */
@@ -858,11 +868,9 @@ class MainActivity : AppCompatActivity() {
         if (jogadorGanhou) {
             pontosJogador += pontosRodada
             vibrar(100) 
-            if (pontosRodada > 0) mostrarFeedback("Você ganhou a rodada!")
         } else {
             pontosAndroid += pontosRodada
             vibrar(80)
-            if (pontosRodada > 0) mostrarFeedback("Android ganhou a rodada!")
         }
         
         jogadorComeca = jogadorGanhou // O vencedor começa a próxima

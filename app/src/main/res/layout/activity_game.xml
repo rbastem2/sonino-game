@@ -72,14 +72,31 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
-    <ImageButton
+    <!-- Botão de Som -->
+    <Button
         android:id="@+id/btnSom"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_margin="8dp"
         android:background="@drawable/btn_escuro"
-        android:src="@android:drawable/ic_lock_silent_mode_off"
-        android:tint="@color/dourado"
+        android:text="🔊"
+        android:textColor="@color/dourado"
+        android:textSize="18sp"
+        android:padding="0dp"
+        app:layout_constraintEnd_toStartOf="@+id/btnVibracao"
+        app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
+
+    <!-- Botão de Vibração -->
+    <Button
+        android:id="@+id/btnVibracao"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/btn_escuro"
+        android:text="📳"
+        android:textColor="@color/dourado"
+        android:textSize="18sp"
+        android:padding="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
@@ -87,7 +104,7 @@
         android:id="@+id/areaAndroid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="180dp"
+        android:layout_marginTop="240dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -170,7 +187,7 @@
         android:id="@+id/areaJogador"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="80dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
