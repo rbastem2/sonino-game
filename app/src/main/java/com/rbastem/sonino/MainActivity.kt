@@ -8,14 +8,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.view.animation.OvershootInterpolator
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.view.doOnLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.doOnLayout
 
 data class Carta(val valor: String, val naipe: String) {
     override fun toString(): String { return "$valor $naipe" }
@@ -226,7 +225,7 @@ class MainActivity : AppCompatActivity() {
             cartaTrunfo = baralho.last()
             trunfo = cartaTrunfo!!.naipe
             
-            // Mostra o trunfo
+            // MOSTRAR O TRUNFO NA MESA
             mostrarCarta(txtTrunfoMesa, imgTrunfoMesa, cartaTrunfo)
             imgTrunfoMesa.visibility = View.VISIBLE
             txtTrunfoMesa.visibility = View.VISIBLE
@@ -268,7 +267,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun animarDistribuicao() {
-        // Usa doOnLayout para garantir que o layout já foi desenhado
         imgMonte.doOnLayout {
             if (!isJogoAtivo) return@doOnLayout
             val startLoc = IntArray(2)
