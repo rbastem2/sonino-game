@@ -240,6 +240,48 @@ class MainActivity : AppCompatActivity() {
             vibrar()
             mostrarEstatisticas()
         }
+
+        findViewById<ImageButton>(R.id.btnBonusDiario).setOnClickListener {
+            vibrar()
+            val prefs = getSharedPreferences("sonino_bonus", Context.MODE_PRIVATE)
+            val dataHoje = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+            val ultimaData = prefs.getString("ultima_data", "") ?: ""
+            
+            if (ultimaData == dataHoje) {
+                AlertDialog.Builder(this)
+                    .setTitle("Bónus Diário")
+                    .setMessage("Você já resgatou o seu bónus hoje! Volte amanhã para continuar a sequência.")
+                    .setPositiveButton("OK", null).show()
+            } else {
+                var sequencia = prefs.getInt("sequencia", 0)
+                val dataOntem = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
+                
+                if (ultimaData == dataOntem) {
+                    sequencia++
+                } else {
+                    sequencia = 1
+                }
+                
+                val pontosBonus = sequencia * 50 // 50 pontos por dia consecutivo
+                
+                // Adiciona os pontos ao total de estatísticas
+                val statsPrefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
+                val totalAtual = statsPrefs.getInt("total_pontos", 0)
+                statsPrefs.edit().putInt("total_pontos", totalAtual + pontosBonus).apply()
+                
+                // Salva a nova data e sequência
+                prefs.edit().putString("ultima_data", dataHoje).putInt("sequencia", sequencia).apply()
+                
+                AlertDialog.Builder(this)
+                    .setTitle("🎁 Bónus Diário (Dia $sequencia)")
+                    .setMessage("Você ganhou $pontosBonus pontos!
+Volte amanhã para ganhar ainda mais.")
+                    .setPositiveButton("Receber", null).show()
+                    
+                tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
+            }
+        }
+
     }
 
     fun configurarBotoesDeJogo() {
