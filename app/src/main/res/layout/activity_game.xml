@@ -80,12 +80,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
-    <!-- Cartas do Android (Mão) -->
+    <!-- Cartas do Android (Mão) - Mais para baixo -->
     <LinearLayout
         android:id="@+id/areaAndroid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="110dp"
+        android:layout_marginTop="240dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -96,46 +96,22 @@
         <ImageView android:id="@+id/cartaAndroid3" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
     </LinearLayout>
 
-    <!-- Mesa Central (Cartas Jogadas) -->
-    <LinearLayout
-        android:id="@+id/areaMesa"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        app:layout_constraintBottom_toTopOf="@+id/areaJogador"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/areaAndroid"
-        app:layout_constraintVertical_bias="0.4">
-
-        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="8dp" android:elevation="8dp">
-            <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
-        </FrameLayout>
-
-        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="8dp" android:elevation="8dp">
-            <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
-        </FrameLayout>
-    </LinearLayout>
-
-    <!-- Monte e Trunfo (Nova estrutura para sobreposição) -->
+    <!-- Monte e Trunfo Visual (Empurrado totalmente para a esquerda) -->
     <RelativeLayout
         android:id="@+id/areaMonte"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/areaMesa"
         app:layout_constraintBottom_toBottomOf="@+id/areaMesa">
 
-        <!-- Carta de Trunfo (Deitada, ao fundo) -->
+        <!-- Carta de Trunfo (Deitada) -->
         <FrameLayout
             android:layout_width="80dp"
             android:layout_height="55dp"
-            android:layout_marginStart="35dp"
-            android:layout_marginTop="12dp">
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="10dp">
             
             <ImageView 
                 android:id="@+id/imgTrunfoMesa" 
@@ -157,7 +133,7 @@
                 android:visibility="gone"/>
         </FrameLayout>
 
-        <!-- Monte de cartas (Por cima do trunfo) -->
+        <!-- Monte de cartas -->
         <ImageView
             android:id="@+id/imgMonte"
             android:layout_width="55dp"
@@ -165,6 +141,31 @@
             android:src="@drawable/verso_carta"
             android:scaleType="fitCenter"/>
     </RelativeLayout>
+
+    <!-- Mesa Central (Cartas Jogadas) - Desceu para o meio do círculo -->
+    <LinearLayout
+        android:id="@+id/areaMesa"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginStart="12dp"
+        app:layout_constraintBottom_toTopOf="@+id/areaJogador"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/areaMonte"
+        app:layout_constraintTop_toBottomOf="@+id/areaAndroid"
+        app:layout_constraintVertical_bias="0.65"> <!-- Desceu a mesa -->
+
+        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="4dp" android:elevation="8dp">
+            <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
+        </FrameLayout>
+
+        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="4dp" android:elevation="8dp">
+            <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
+        </FrameLayout>
+    </LinearLayout>
 
     <!-- Suas Cartas -->
     <LinearLayout
