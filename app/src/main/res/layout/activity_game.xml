@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/fundo_tabuleiro"
-    android:paddingTop="40dp"> <!-- CORREÇÃO: Empurra tudo para baixo da barra de status -->
+    android:paddingTop="40dp">
 
     <!-- Topo: Placar -->
     <LinearLayout
@@ -98,13 +98,13 @@
         <ImageView android:id="@+id/cartaAndroid3" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
     </LinearLayout>
 
+    <!-- Mesa Central (Totalmente Centrada) -->
     <LinearLayout
         android:id="@+id/areaMesa"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginStart="12dp"
         app:layout_constraintBottom_toTopOf="@+id/areaJogador"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -122,12 +122,12 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- CORREÇÃO: areaMonte afastada da borda esquerda -->
+    <!-- Monte e Trunfo (Empurrado totalmente para a Esquerda) -->
     <RelativeLayout
         android:id="@+id/areaMonte"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
+        android:layout_marginStart="8dp"
         android:clipChildren="false"
         android:clipToPadding="false"
         app:layout_constraintStart_toStartOf="parent"

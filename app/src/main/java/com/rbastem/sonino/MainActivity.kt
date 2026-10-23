@@ -72,14 +72,13 @@ class MainActivity : AppCompatActivity() {
     private var isJogoAtivo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         
-        // Inicializa o Vibrator de forma compatível com todas as versões do Android
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
@@ -96,9 +95,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (isJogoAtivo) {
-            salvarEstadoJogo()
-        }
+        if (isJogoAtivo) salvarEstadoJogo()
     }
 
     override fun onDestroy() {
@@ -111,15 +108,19 @@ class MainActivity : AppCompatActivity() {
         if (somAtivado) toneG?.startTone(tipo, duracao)
     }
 
-    // Nova função de vibração usando API nativa
+    // Função robusta para forçar vibração
     fun vibrar(duracao: Long = 50) {
-        if (vibrator.hasVibrator()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(duracao, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(duracao)
+        try {
+            if (vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(duracao, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(duracao)
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -662,10 +663,10 @@ class MainActivity : AppCompatActivity() {
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
         if (jogadorGanhou) {
             pontosJogador += pontosRodada
-            vibrar(100) // Vibração mais longa para vitória na rodada
+            vibrar(100) 
         } else {
             pontosAndroid += pontosRodada
-            vibrar(80) // Vibração padrão para derrota
+            vibrar(80)
         }
         
         jogadorComeca = jogadorGanhou 
@@ -710,7 +711,7 @@ class MainActivity : AppCompatActivity() {
             partidaGanha = true
             mensagem = "Você ganhou a partida!"
             tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
-            vibrar(200) // Vibração longa de vitória
+            vibrar(200)
         } else if (pontosAndroid >= 61 && pontosAndroid > pontosJogador) {
             partidasAndroid++
             mensagem = "O Android ganhou a partida!"
@@ -754,7 +755,7 @@ class MainActivity : AppCompatActivity() {
                 val vencedorFinal = if (partidasJogador == 2) "VOCÊ VENCEU O TORNEIO!" else "O ANDROID VENCEU O TORNEIO!"
                 mostrarFeedback(vencedorFinal)
                 tocarSom(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
-                vibrar(300) // Vibração muito longa para o fim do torneio
+                vibrar(300)
                 
                 editor = prefs.edit()
                 editor.putInt("total_torneios", prefs.getInt("total_torneios", 0) + 1)
