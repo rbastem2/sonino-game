@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         if (idImagem != 0) {
             img.setImageResource(idImagem); img.visibility = ImageView.VISIBLE; tv.visibility = TextView.GONE
             // Animação de entrada (zoom)
-            img.scaleX = 0.5f; img.scaleY = 0.5f
+            img.scaleX = 0.8f; img.scaleY = 0.8f
             img.animate().scaleX(1f).scaleY(1f).setDuration(300).setInterpolator(OvershootInterpolator()).start()
         } else {
             img.visibility = ImageView.GONE; tv.visibility = TextView.VISIBLE
@@ -176,6 +176,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun iniciarRodada() {
+        var isFirstDeal = false
         if (baralho.isEmpty() && maoJogador.isEmpty() && maoAndroid.isEmpty()) {
             for (n in naipes) { for (v in valores) { baralho.add(Carta(v, n)) } }
             baralho.shuffle()
@@ -190,6 +191,7 @@ class MainActivity : AppCompatActivity() {
                 maoJogador.add(baralho.removeAt(0))
                 maoAndroid.add(baralho.removeAt(0))
             }
+            isFirstDeal = true
         }
         
         imgMonte.visibility = if (baralho.isNotEmpty()) View.VISIBLE else View.GONE
@@ -201,12 +203,67 @@ class MainActivity : AppCompatActivity() {
         atualizarTela()
         atualizarPlacar()
 
-        if (jogadorComeca) {
-            habilitarCliquesJogador(true)
-        } else {
+        if (isFirstDeal) {
             habilitarCliquesJogador(false)
-            Handler(Looper.getMainLooper()).postDelayed({ androidJogaPrimeiro() }, 1000)
+            animarDistribuicao()
+            // Espera a animação terminar (6 cartas * 150ms + 500ms de duração) antes de liberar o jogo
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (jogadorComeca) habilitarCliquesJogador(true)
+                else androidJogaPrimeiro()
+            }, 1600)
+        } else {
+            if (jogadorComeca) {
+                habilitarCliquesJogador(true)
+            } else {
+                habilitarCliquesJogador(false)
+                Handler(Looper.getMainLooper()).postDelayed({ androidJogaPrimeiro() }, 1000)
+            }
         }
+    }
+
+    fun animarDistribuicao() {
+        // Pequeno delay para garantir que as views foram desenhadas na tela
+        Handler(Looper.getMainLooper()).postDelayed({
+            val startLoc = IntArray(2)
+            imgMonte.getLocationOnScreen(startLoc)
+            val startX = startLoc[0].toFloat()
+            val startY = startLoc[1].toFloat()
+
+            var delayAnim = 0L
+
+            fun jogarCartaAnimada(cardView: View) {
+                val cardLoc = IntArray(2)
+                cardView.getLocationOnScreen(cardLoc)
+                val targetX = cardLoc[0].toFloat()
+                val targetY = cardLoc[1].toFloat()
+
+                // Move a carta para a posição do monte
+                cardView.translationX = startX - targetX
+                cardView.translationY = startY - targetY
+                cardView.alpha = 0f
+
+                // Anima de volta para a posição original
+                cardView.animate()
+                    .translationX(0f)
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(500)
+                    .setStartDelay(delayAnim)
+                    .start()
+                
+                delayAnim += 150
+            }
+
+            // Anima as cartas do jogador
+            uiImgsJogador.forEach { if (it.visibility == View.VISIBLE) jogarCartaAnimada(it) }
+            
+            // Anima as cartas do Android
+            uiImgsAndroid.forEach { if (it.visibility == View.VISIBLE) jogarCartaAnimada(it) }
+
+            // Som de distribuição
+            toneG?.startTone(ToneGenerator.TONE_PROP_BEEP2, 200)
+
+        }, 100)
     }
 
     fun habilitarCliquesJogador(habilitar: Boolean) {
@@ -294,7 +351,7 @@ class MainActivity : AppCompatActivity() {
             if (cartaQueGanha != -1) { 
                 indexJogada = cartaQueGanha 
             } else {
-                // IA Mestre: Tenta descartar a menor carta, priorizando naipes onde o jogador já mostrou fraqueza
+                // IA Mestre: Tenta descartar a menor carta
                 var menorValor = 100
                 for (i in maoAndroid.indices) {
                     val p = pontosCartas[maoAndroid[i].valor] ?: 0
