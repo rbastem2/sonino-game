@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         isJogoAtivo = false
         setContentView(R.layout.activity_main)
 
-        findViewById<ImageButton>(R.id.btnBonusDiario).setOnClickListener {
+        findViewById<TextView>(R.id.btnBonusDiario).setOnClickListener {
             vibrar()
             val prefs = getSharedPreferences("sonino_bonus", Context.MODE_PRIVATE)
             val dataHoje = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
