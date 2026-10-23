@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B3B24"
+    android:padding="24dp">
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/txtTituloStats"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Estatísticas"
+        android:textColor="#FF6B6B"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Subtítulo (Nível) -->
+    <TextView
+        android:id="@+id/txtNivelStats"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Nível: Difícil"
+        android:textColor="@color/branco"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtTituloStats" />
+
+    <!-- Lista de Estatísticas -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@+id/txtNivelStats">
+
+        <TextView
+            android:id="@+id/txtPontos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pontos: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:id="@+id/txtTotalTorneios"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Total de Torneios: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/txtTorneiosGanhos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ganhos: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/txtTorneiosPerdidos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Perdidos: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:id="@+id/txtTotalPartidas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Total de Partidas: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/txtPartidasGanhas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ganhas: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/txtPartidasPerdidas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Perdidas: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/txtPartidasEmpatadas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Empatadas: 0"
+            android:textColor="@color/branco"
+            android:textSize="22sp" />
+    </LinearLayout>
+
+    <!-- Botão Voltar (Seta Esquerda) -->
+    <Button
+        android:id="@+id/btnVoltarStats"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/btn_escuro"
+        android:text="⬅"
+        android:textColor="#FF6B6B"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Botão Resetar Estatísticas (Seta Circular) -->
+    <Button
+        android:id="@+id/btnResetStats"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/btn_escuro"
+        android:text="🔄"
+        android:textColor="@color/branco"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

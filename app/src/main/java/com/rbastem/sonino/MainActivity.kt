@@ -103,9 +103,52 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnHistorico).setOnClickListener {
-            val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
-            val hist = prefs.getString("historico", "Nenhum jogo registado ainda.") ?: "Nenhum jogo."
-            AlertDialog.Builder(this).setTitle("Histórico").setMessage(hist).setPositiveButton("Fechar", null).show()
+            mostrarEstatisticas()
+        }
+    }
+
+    fun mostrarEstatisticas() {
+        isJogoAtivo = false
+        setContentView(R.layout.activity_stats)
+
+        val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
+        
+        // Carrega os dados
+        val totalPontos = prefs.getInt("total_pontos", 0)
+        val totalTorneios = prefs.getInt("total_torneios", 0)
+        val torneiosGanhos = prefs.getInt("torneios_ganhos", 0)
+        val torneiosPerdidos = prefs.getInt("torneios_perdidos", 0)
+        
+        val totalPartidas = prefs.getInt("total_partidas", 0)
+        val partidasGanhas = prefs.getInt("partidas_ganhas", 0)
+        val partidasPerdidas = prefs.getInt("partidas_perdidas", 0)
+        val partidasEmpatadas = prefs.getInt("partidas_empatadas", 0)
+
+        // Atualiza os textos da tela
+        findViewById<TextView>(R.id.txtNivelStats).text = "Nível: $dificuldade"
+        findViewById<TextView>(R.id.txtPontos).text = "Pontos: $totalPontos"
+        findViewById<TextView>(R.id.txtTotalTorneios).text = "Total de Torneios: $totalTorneios"
+        findViewById<TextView>(R.id.txtTorneiosGanhos).text = "Ganhos: $torneiosGanhos"
+        findViewById<TextView>(R.id.txtTorneiosPerdidos).text = "Perdidos: $torneiosPerdidos"
+        findViewById<TextView>(R.id.txtTotalPartidas).text = "Total de Partidas: $totalPartidas"
+        findViewById<TextView>(R.id.txtPartidasGanhas).text = "Ganhas: $partidasGanhas"
+        findViewById<TextView>(R.id.txtPartidasPerdidas).text = "Perdidas: $partidasPerdidas"
+        findViewById<TextView>(R.id.txtPartidasEmpatadas).text = "Empatadas: $partidasEmpatadas"
+
+        // Botão Voltar
+        findViewById<Button>(R.id.btnVoltarStats).setOnClickListener {
+            mostrarMenuPrincipal()
+        }
+
+        // Botão Resetar
+        findViewById<Button>(R.id.btnResetStats).setOnClickListener {
+            AlertDialog.Builder(this).setTitle("Resetar Estatísticas")
+                .setMessage("Tem certeza que deseja apagar todos os dados?")
+                .setPositiveButton("Sim") { _, _ ->
+                    prefs.edit().clear().apply()
+                    mostrarEstatisticas() // Recarrega a tela zerada
+                }
+                .setNegativeButton("Não", null).show()
         }
     }
 
@@ -420,8 +463,12 @@ class MainActivity : AppCompatActivity() {
         if (!isJogoAtivo) return
         
         var mensagem = ""
+        var partidaGanha = false
+        var partidaEmpatada = false
+
         if (pontosJogador >= 61 && pontosJogador > pontosAndroid) {
             partidasJogador++
+            partidaGanha = true
             mensagem = "Você ganhou a partida!"
             tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
         } else if (pontosAndroid >= 61 && pontosAndroid > pontosJogador) {
@@ -429,10 +476,12 @@ class MainActivity : AppCompatActivity() {
             mensagem = "O Android ganhou a partida!"
             tocarSom(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000)
         } else if (pontosJogador == 60 && pontosAndroid == 60) {
+            partidaEmpatada = true
             mensagem = "Empate na partida!"
         } else {
             if (pontosJogador > pontosAndroid) {
                 partidasJogador++
+                partidaGanha = true
                 mensagem = "Você ganhou a partida!"
             } else {
                 partidasAndroid++
@@ -443,7 +492,18 @@ class MainActivity : AppCompatActivity() {
         atualizarPlacar()
         mostrarFeedback(mensagem)
 
-        // Aguarda alguns segundos para mostrar a mensagem antes de continuar
+        // Salvar estatísticas da partida
+        val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
+        var editor = prefs.edit()
+        editor.putInt("total_pontos", prefs.getInt("total_pontos", 0) + pontosJogador)
+        editor.putInt("total_partidas", prefs.getInt("total_partidas", 0) + 1)
+        
+        if (partidaGanha) editor.putInt("partidas_ganhas", prefs.getInt("partidas_ganhas", 0) + 1)
+        else if (partidaEmpatada) editor.putInt("partidas_empatadas", prefs.getInt("partidas_empatadas", 0) + 1)
+        else editor.putInt("partidas_perdidas", prefs.getInt("partidas_perdidas", 0) + 1)
+        
+        editor.apply()
+
         Handler(Looper.getMainLooper()).postDelayed({
             if (!isJogoAtivo) return@postDelayed
             
@@ -452,14 +512,16 @@ class MainActivity : AppCompatActivity() {
                 mostrarFeedback(vencedorFinal)
                 tocarSom(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
                 
-                // Salvar no histórico
-                val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
-                val dataAtual = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
-                val historicoAntigo = prefs.getString("historico", "") ?: ""
-                val novoHistorico = "$dataAtual - ${if (partidasJogador == 2) "VOCÊ" else "ANDROID"} venceu ($partidasJogador-$partidasAndroid)\n$historicoAntigo"
-                prefs.edit().putString("historico", novoHistorico).apply()
-                
-                // Espera mais um pouco e volta ao menu
+                // Salvar estatísticas do torneio
+                editor = prefs.edit()
+                editor.putInt("total_torneios", prefs.getInt("total_torneios", 0) + 1)
+                if (partidasJogador == 2) {
+                    editor.putInt("torneios_ganhos", prefs.getInt("torneios_ganhos", 0) + 1)
+                } else {
+                    editor.putInt("torneios_perdidos", prefs.getInt("torneios_perdidos", 0) + 1)
+                }
+                editor.apply()
+
                 Handler(Looper.getMainLooper()).postDelayed({
                     if (isJogoAtivo) mostrarMenuPrincipal()
                 }, 4000)
@@ -470,7 +532,7 @@ class MainActivity : AppCompatActivity() {
                 maoAndroid.clear()
                 iniciarNovaPartida() 
             }
-        }, 4000) // Tempo que a mensagem da partida fica na tela
+        }, 4000)
     }
 
     fun mostrarFeedback(texto: String) {
