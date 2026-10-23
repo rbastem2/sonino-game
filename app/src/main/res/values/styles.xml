@@ -4,4 +4,9 @@
         <item name="colorPrimaryDark">#0B5E30</item>
         <item name="colorAccent">#D4AF37</item>
     </style>
+    <style name="Theme.Sonino.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/verde_mesa</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/icone</item>
+        <item name="postSplashScreenTheme">@style/Theme.Sonino</item>
+    </style>
 </resources>

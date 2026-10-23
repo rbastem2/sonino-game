@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
     android:layout_height="match_parent"
     android:background="@drawable/fundo_tabuleiro">
 
@@ -9,6 +10,7 @@
     <LinearLayout
         android:id="@+id/topoPlacar"
         android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center_vertical"
@@ -114,13 +116,17 @@
         app:layout_constraintVertical_bias="0.6"> <!-- Empurra para o meio/baixo -->
 
         <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="4dp" android:elevation="8dp">
-            <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
+            <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaMesaJogador" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
         </FrameLayout>
 
         <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="4dp" android:elevation="8dp">
-            <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
+            <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaMesaAndroid" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
         </FrameLayout>
     </LinearLayout>
 
@@ -181,18 +187,24 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="6dp">
-            <ImageView android:id="@+id/imgJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
+            <ImageView android:id="@+id/imgJogador1" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaJogador1" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
         
         <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="6dp">
-            <ImageView android:id="@+id/imgJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
+            <ImageView android:id="@+id/imgJogador2" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaJogador2" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
 
         <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="6dp">
-            <ImageView android:id="@+id/imgJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/cartaJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
+            <ImageView android:id="@+id/imgJogador3" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/cartaJogador3" android:layout_width="match_parent"
+    android:fitsSystemWindows="true" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
     </LinearLayout>
 

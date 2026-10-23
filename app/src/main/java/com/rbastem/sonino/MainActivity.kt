@@ -7,6 +7,7 @@ import android.media.ToneGenerator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
@@ -14,6 +15,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.core.view.doOnLayout
 
 data class Carta(val valor: String, val naipe: String) {
@@ -31,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     var maoAndroid = mutableListOf<Carta>()
     var trunfo = ""
     var cartaTrunfo: Carta? = null
-    var cartasJaJogadas = mutableListOf<Carta>() // Memória para o Mestre
+    var cartasJaJogadas = mutableListOf<Carta>()
     
     var pontosJogador = 0
     var pontosAndroid = 0
@@ -65,10 +68,14 @@ class MainActivity : AppCompatActivity() {
     private var isJogoAtivo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        
+        // Habilita Edge-to-Edge (Tela Cheia)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         
-        // Carrega a dificuldade salva
         val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
         dificuldade = prefs.getString("dificuldade_salva", "Difícil") ?: "Difícil"
         
@@ -92,11 +99,16 @@ class MainActivity : AppCompatActivity() {
         if (somAtivado) toneG?.startTone(tipo, duracao)
     }
 
+    fun vibrar(tipo: Int = HapticFeedbackConstants.VIRTUAL_KEY) {
+        window.decorView.performHapticFeedback(tipo)
+    }
+
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
         setContentView(R.layout.activity_main)
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
+            vibrar()
             val savePrefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
             if (savePrefs.getBoolean("tem_jogo_salvo", false)) {
                 AlertDialog.Builder(this)
@@ -139,34 +151,38 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnRegras).setOnClickListener {
+            vibrar()
             AlertDialog.Builder(this).setTitle("Regras do SONINO")
                 .setMessage("• Baralho de 40 cartas.\n• Trunfo: última carta do baralho.\n• Ganha a rodada o trunfo mais forte ou a carta mais forte do naipe inicial.\n• Quem ganha, joga primeiro.\n• Vence quem fizer 61 pontos.\n• Torneio: melhor de 3.")
                 .setPositiveButton("Entendi", null).show()
         }
 
         findViewById<Button>(R.id.btnConfig).setOnClickListener {
+            vibrar()
             val opcoes = arrayOf("Fácil", "Difícil", "Mestre")
             val indexAtual = opcoes.indexOf(dificuldade)
             AlertDialog.Builder(this).setTitle("Nível do Android").setSingleChoiceItems(opcoes, indexAtual) { dialog, which ->
                 dificuldade = opcoes[which]
-                // Salva a nova dificuldade
                 getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putString("dificuldade_salva", dificuldade).apply()
                 dialog.dismiss()
             }.show()
         }
 
         findViewById<Button>(R.id.btnHistorico).setOnClickListener {
+            vibrar()
             mostrarEstatisticas()
         }
     }
 
     fun configurarBotoesDeJogo() {
         findViewById<Button>(R.id.btnMenu).setOnClickListener {
+            vibrar()
             salvarEstadoJogo()
             mostrarMenuPrincipal()
         }
         
         btnSom.setOnClickListener {
+            vibrar()
             somAtivado = !somAtivado
             btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
         }
@@ -293,10 +309,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.txtPartidasEmpatadas).text = "Empatadas: $partidasEmpatadas"
 
         findViewById<Button>(R.id.btnVoltarStats).setOnClickListener {
+            vibrar()
             mostrarMenuPrincipal()
         }
 
         findViewById<Button>(R.id.btnResetStats).setOnClickListener {
+            vibrar()
             AlertDialog.Builder(this).setTitle("Resetar Estatísticas")
                 .setMessage("Tem certeza que deseja apagar todos os dados?")
                 .setPositiveButton("Sim") { _, _ ->
@@ -395,6 +413,11 @@ class MainActivity : AppCompatActivity() {
 
         mesaJogador.text = ""; mesaAndroid.text = ""
         imgMesaJogador.visibility = ImageView.GONE; imgMesaAndroid.visibility = ImageView.GONE
+        
+        // Reseta posições para o caso de vir de uma animação de descarte
+        imgMesaJogador.translationX = 0f; imgMesaJogador.translationY = 0f; imgMesaJogador.alpha = 1f
+        imgMesaAndroid.translationX = 0f; imgMesaAndroid.translationY = 0f; imgMesaAndroid.alpha = 1f
+
         cartaAndroidJogada = null
         cartaJogadorJogada = null
         
@@ -459,6 +482,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun animarDescarte(jogadorGanhou: Boolean) {
+        val targetArea = if (jogadorGanhou) findViewById<View>(R.id.areaJogador) else findViewById<View>(R.id.areaAndroid)
+        val targetLoc = IntArray(2)
+        targetArea.getLocationOnScreen(targetLoc)
+
+        val viewsToAnimate = listOf(imgMesaJogador, imgMesaAndroid)
+        for (v in viewsToAnimate) {
+            if (v.visibility == View.VISIBLE) {
+                val cardLoc = IntArray(2)
+                v.getLocationOnScreen(cardLoc)
+                v.animate()
+                    .translationX((targetLoc[0] - cardLoc[0]).toFloat())
+                    .translationY((targetLoc[1] - cardLoc[1]).toFloat())
+                    .alpha(0f)
+                    .setDuration(400)
+                    .start()
+            }
+        }
+    }
+
     fun habilitarCliquesJogador(habilitar: Boolean) {
         for (i in 0..2) {
             if (habilitar) {
@@ -488,6 +531,7 @@ class MainActivity : AppCompatActivity() {
         if (maoJogador.size <= index || !isJogoAtivo) return
         habilitarCliquesJogador(false)
         
+        vibrar()
         tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
 
         val cartaJogada = maoJogador.removeAt(index)
@@ -510,34 +554,20 @@ class MainActivity : AppCompatActivity() {
         if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
         var indexJogada = 0
-        
         when (dificuldade) {
-            "Fácil" -> {
-                indexJogada = maoAndroid.indices.random()
-            }
+            "Fácil" -> indexJogada = maoAndroid.indices.random()
             "Difícil" -> {
-                // Tenta jogar a carta mais alta que não seja trunfo. Se só tiver trunfo, joga a mais alta.
                 val naoTrunfos = maoAndroid.indices.filter { maoAndroid[it].naipe != trunfo }
-                if (naoTrunfos.isNotEmpty()) {
-                    indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
-                } else {
-                    indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
-                }
+                if (naoTrunfos.isNotEmpty()) indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                else indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
             }
             "Mestre" -> {
-                // MESTRE: Se tem um Ás, joga ele para garantir a rodada.
                 val ases = maoAndroid.indices.filter { maoAndroid[it].valor == "A" }
-                if (ases.isNotEmpty()) {
-                    indexJogada = ases.first()
-                } else {
-                    // Joga a maior carta de um naipe que ele tem certeza que o jogador não tem (baseado nas jogadas).
-                    // Simplificação: Joga a maior carta não-trunfo, ou maior trunfo se não tiver escolha.
+                if (ases.isNotEmpty()) indexJogada = ases.first()
+                else {
                     val naoTrunfos = maoAndroid.indices.filter { maoAndroid[it].naipe != trunfo }
-                    if (naoTrunfos.isNotEmpty()) {
-                        indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
-                    } else {
-                        indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
-                    }
+                    if (naoTrunfos.isNotEmpty()) indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                    else indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
                 }
             }
         }
@@ -557,52 +587,28 @@ class MainActivity : AppCompatActivity() {
         val pontosNaMesa = pontosCartas[cartaJogador.valor] ?: 0
         
         when (dificuldade) {
-            "Fácil" -> {
-                indexJogada = maoAndroid.indices.random()
-            }
+            "Fácil" -> indexJogada = maoAndroid.indices.random()
             "Difícil" -> {
                 var cartasQueGanham = mutableListOf<Int>()
                 for (i in maoAndroid.indices) {
                     val c = maoAndroid[i]
-                    if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
-                        cartasQueGanham.add(i)
-                    } else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
-                        cartasQueGanham.add(i)
-                    }
+                    if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) cartasQueGanham.add(i)
+                    else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) cartasQueGanham.add(i)
                 }
-
-                if (cartasQueGanham.isNotEmpty()) {
-                    // Usa a menor carta possível para ganhar
-                    indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
-                } else {
-                    // Descarta a carta de menor valor (0 pontos)
-                    indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
-                }
+                if (cartasQueGanham.isNotEmpty()) indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                else indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
             }
             "Mestre" -> {
                 var cartasQueGanham = mutableListOf<Int>()
                 for (i in maoAndroid.indices) {
                     val c = maoAndroid[i]
-                    if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
-                        cartasQueGanham.add(i)
-                    } else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
-                        cartasQueGanham.add(i)
-                    }
+                    if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) cartasQueGanham.add(i)
+                    else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) cartasQueGanham.add(i)
                 }
-
                 if (cartasQueGanham.isNotEmpty()) {
-                    // MESTRE: Não gasta trunfo para ganhar rodada de 0 pontos.
-                    if (pontosNaMesa == 0 && !cartasQueGanham.any { maoAndroid[it].naipe != trunfo }) {
-                        // Só tem trunfo para ganhar, e a mesa vale 0. Descarta a menor carta.
-                        indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
-                    } else {
-                        // Ganha a rodada usando a menor carta que vence
-                        indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
-                    }
-                } else {
-                    // Não pode ganhar. Descarta a menor carta de 0 ponto.
-                    indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
-                }
+                    if (pontosNaMesa == 0 && !cartasQueGanham.any { maoAndroid[it].naipe != trunfo }) indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
+                    else indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                } else indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
             }
         }
 
@@ -631,19 +637,23 @@ class MainActivity : AppCompatActivity() {
             else jogadorGanhou = jogadorFoiPrimeiro 
         }
 
-        // Adiciona à memória do Mestre
         cartasJaJogadas.add(cartaJogador)
         cartasJaJogadas.add(cartaAndroid)
 
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
         if (jogadorGanhou) {
             pontosJogador += pontosRodada
+            vibrar(HapticFeedbackConstants.CONFIRM)
         } else {
             pontosAndroid += pontosRodada
+            vibrar(HapticFeedbackConstants.LONG_PRESS)
         }
         
         jogadorComeca = jogadorGanhou 
         atualizarPlacar()
+
+        // Inicia a animação de descarte
+        animarDescarte(jogadorGanhou)
 
         Handler(Looper.getMainLooper()).postDelayed({
             if (!isJogoAtivo) return@postDelayed

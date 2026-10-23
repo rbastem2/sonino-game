@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
     android:layout_height="match_parent"
     android:background="#0B3B24"
     android:padding="24dp">
@@ -35,6 +36,7 @@
     <!-- ScrollView para garantir responsividade em telas pequenas -->
     <ScrollView
         android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
         app:layout_constraintBottom_toTopOf="@+id/btnVoltarStats"
@@ -42,6 +44,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingBottom="16dp">
@@ -49,6 +52,7 @@
             <TextView
                 android:id="@+id/txtPontos"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Pontos: 0"
                 android:textColor="@color/branco"
@@ -58,6 +62,7 @@
             <TextView
                 android:id="@+id/txtTotalTorneios"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Total de Torneios: 0"
                 android:textColor="@color/branco"
@@ -66,6 +71,7 @@
             <TextView
                 android:id="@+id/txtTorneiosGanhos"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Ganhos: 0"
                 android:textColor="@color/branco"
@@ -74,6 +80,7 @@
             <TextView
                 android:id="@+id/txtTorneiosPerdidos"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Perdidos: 0"
                 android:textColor="@color/branco"
@@ -83,6 +90,7 @@
             <TextView
                 android:id="@+id/txtTotalPartidas"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Total de Partidas: 0"
                 android:textColor="@color/branco"
@@ -91,6 +99,7 @@
             <TextView
                 android:id="@+id/txtPartidasGanhas"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Ganhas: 0"
                 android:textColor="@color/branco"
@@ -99,6 +108,7 @@
             <TextView
                 android:id="@+id/txtPartidasPerdidas"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Perdidas: 0"
                 android:textColor="@color/branco"
@@ -107,6 +117,7 @@
             <TextView
                 android:id="@+id/txtPartidasEmpatadas"
                 android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
                 android:layout_height="wrap_content"
                 android:text="Empatadas: 0"
                 android:textColor="@color/branco"
