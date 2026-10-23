@@ -32,82 +32,89 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/txtTituloStats" />
 
-    <!-- Lista de Estatísticas -->
-    <LinearLayout
+    <!-- ScrollView para garantir responsividade em telas pequenas -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:orientation="vertical"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintBottom_toTopOf="@+id/btnVoltarStats"
         app:layout_constraintTop_toBottomOf="@+id/txtNivelStats">
 
-        <TextView
-            android:id="@+id/txtPontos"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pontos: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp"
-            android:layout_marginBottom="24dp"/>
+            android:orientation="vertical"
+            android:paddingBottom="16dp">
 
-        <TextView
-            android:id="@+id/txtTotalTorneios"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Total de Torneios: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp" />
+            <TextView
+                android:id="@+id/txtPontos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pontos: 0"
+                android:textColor="@color/branco"
+                android:textSize="20sp"
+                android:layout_marginBottom="24dp"/>
 
-        <TextView
-            android:id="@+id/txtTorneiosGanhos"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Ganhos: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp" />
+            <TextView
+                android:id="@+id/txtTotalTorneios"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Total de Torneios: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/txtTorneiosPerdidos"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Perdidos: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp"
-            android:layout_marginBottom="24dp"/>
+            <TextView
+                android:id="@+id/txtTorneiosGanhos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ganhos: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/txtTotalPartidas"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Total de Partidas: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp" />
+            <TextView
+                android:id="@+id/txtTorneiosPerdidos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Perdidos: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp"
+                android:layout_marginBottom="24dp"/>
 
-        <TextView
-            android:id="@+id/txtPartidasGanhas"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Ganhas: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp" />
+            <TextView
+                android:id="@+id/txtTotalPartidas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Total de Partidas: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/txtPartidasPerdidas"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Perdidas: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp" />
+            <TextView
+                android:id="@+id/txtPartidasGanhas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ganhas: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/txtPartidasEmpatadas"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Empatadas: 0"
-            android:textColor="@color/branco"
-            android:textSize="22sp" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/txtPartidasPerdidas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Perdidas: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp" />
 
-    <!-- Botão Voltar (Seta Esquerda) -->
+            <TextView
+                android:id="@+id/txtPartidasEmpatadas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Empatadas: 0"
+                android:textColor="@color/branco"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Botão Voltar -->
     <Button
         android:id="@+id/btnVoltarStats"
         android:layout_width="60dp"
@@ -119,7 +126,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Botão Resetar Estatísticas (Seta Circular) -->
+    <!-- Botão Resetar -->
     <Button
         android:id="@+id/btnResetStats"
         android:layout_width="60dp"

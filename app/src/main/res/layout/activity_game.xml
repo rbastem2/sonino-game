@@ -5,6 +5,21 @@
     android:layout_height="match_parent"
     android:background="@drawable/fundo_tabuleiro">
 
+    <!-- Guias verticais para dividir a tela em zonas -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideAndroid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.35" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideMesa"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.60" />
+
     <!-- Topo: Placar -->
     <LinearLayout
         android:id="@+id/topoPlacar"
@@ -72,7 +87,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
-    <!-- Botão de Som (ImageButton para melhor compatibilidade) -->
     <ImageButton
         android:id="@+id/btnSom"
         android:layout_width="40dp"
@@ -84,23 +98,23 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
-    <!-- Cartas do Android -->
+    <!-- Cartas do Android (Ancoradas à Guia) -->
     <LinearLayout
         android:id="@+id/areaAndroid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="240dp"
         android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/guideAndroid"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topoPlacar">
+        app:layout_constraintTop_toBottomOf="@+id/btnSom">
 
-        <ImageView android:id="@+id/cartaAndroid1" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
-        <ImageView android:id="@+id/cartaAndroid2" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
-        <ImageView android:id="@+id/cartaAndroid3" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/cartaAndroid1" android:layout_width="55dp" android:layout_height="82dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/cartaAndroid2" android:layout_width="55dp" android:layout_height="82dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/cartaAndroid3" android:layout_width="55dp" android:layout_height="82dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
     </LinearLayout>
 
-    <!-- Monte e Trunfo (CORRIGIDO) -->
+    <!-- Monte e Trunfo -->
     <RelativeLayout
         android:id="@+id/areaMonte"
         android:layout_width="wrap_content"
@@ -110,41 +124,16 @@
         app:layout_constraintTop_toTopOf="@+id/areaMesa"
         app:layout_constraintBottom_toBottomOf="@+id/areaMesa">
 
-        <!-- Carta de Trunfo (Deitada, ao fundo) -->
-        <!-- O FrameLayout agora tem o tamanho exato da imagem rotacionada -->
         <FrameLayout
             android:layout_width="80dp"
             android:layout_height="55dp"
             android:layout_marginStart="25dp"
             android:layout_marginTop="10dp">
-            
-            <ImageView 
-                android:id="@+id/imgTrunfoMesa" 
-                android:layout_width="match_parent" 
-                android:layout_height="match_parent" 
-                android:layout_gravity="center"
-                android:rotation="90" 
-                android:scaleType="fitCenter" 
-                android:visibility="gone"/>
-                
-            <TextView 
-                android:id="@+id/txtTrunfoMesa" 
-                android:layout_width="match_parent" 
-                android:layout_height="match_parent" 
-                android:layout_gravity="center"
-                android:rotation="90" 
-                android:gravity="center" 
-                android:textStyle="bold" 
-                android:visibility="gone"/>
+            <ImageView android:id="@+id/imgTrunfoMesa" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" android:rotation="90" android:scaleType="fitCenter" android:visibility="gone"/>
+            <TextView android:id="@+id/txtTrunfoMesa" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" android:rotation="90" android:gravity="center" android:textStyle="bold" android:visibility="gone"/>
         </FrameLayout>
 
-        <!-- Monte de cartas (Por cima do trunfo) -->
-        <ImageView
-            android:id="@+id/imgMonte"
-            android:layout_width="55dp"
-            android:layout_height="80dp"
-            android:src="@drawable/verso_carta"
-            android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/imgMonte" android:layout_width="55dp" android:layout_height="80dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
     </RelativeLayout>
 
     <!-- Mesa Central -->
@@ -155,18 +144,17 @@
         android:orientation="horizontal"
         android:gravity="center"
         android:layout_marginStart="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/areaJogador"
+        app:layout_constraintBottom_toTopOf="@+id/guideMesa"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/areaMonte"
-        app:layout_constraintTop_toBottomOf="@+id/areaAndroid"
-        app:layout_constraintVertical_bias="0.65">
+        app:layout_constraintTop_toBottomOf="@+id/guideAndroid">
 
-        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="4dp" android:elevation="8dp">
+        <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="8dp">
             <ImageView android:id="@+id/imgMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaMesaJogador" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
         </FrameLayout>
 
-        <FrameLayout android:layout_width="85dp" android:layout_height="125dp" android:layout_margin="4dp" android:elevation="8dp">
+        <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="8dp">
             <ImageView android:id="@+id/imgMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaMesaAndroid" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" />
         </FrameLayout>
@@ -175,11 +163,11 @@
     <!-- Feedback de Fim de Jogo -->
     <TextView
         android:id="@+id/txtFeedbackRodada"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
         android:background="@drawable/btn_escuro"
         android:padding="24dp"
-        android:maxWidth="300dp"
         android:gravity="center"
         android:textColor="@color/dourado"
         android:textSize="24sp"
@@ -203,17 +191,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="4dp" android:elevation="6dp">
+        <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="6dp">
             <ImageView android:id="@+id/imgJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaJogador1" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
         
-        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="4dp" android:elevation="6dp">
+        <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="6dp">
             <ImageView android:id="@+id/imgJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaJogador2" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
 
-        <FrameLayout android:layout_width="80dp" android:layout_height="120dp" android:layout_margin="4dp" android:elevation="6dp">
+        <FrameLayout android:layout_width="80dp" android:layout_height="115dp" android:layout_margin="4dp" android:elevation="6dp">
             <ImageView android:id="@+id/imgJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:visibility="gone"/>
             <TextView android:id="@+id/cartaJogador3" android:layout_width="match_parent" android:layout_height="match_parent" android:textColor="#000000" android:gravity="center" android:textSize="24sp" android:textStyle="bold" android:clickable="true" android:focusable="true" />
         </FrameLayout>
