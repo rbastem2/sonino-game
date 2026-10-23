@@ -6,6 +6,9 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -109,10 +112,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Função robusta para forçar vibração
-    fun vibrar(duracao: Long = 50) {
+    fun vibrar(duracao: Long = 100) {
         try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vibratorManager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
             if (vibrator.hasVibrator()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     vibrator.vibrate(VibrationEffect.createOneShot(duracao, VibrationEffect.DEFAULT_AMPLITUDE))
                 } else {
                     @Suppress("DEPRECATION")
