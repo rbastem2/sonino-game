@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     var cartaAndroidJogada: Carta? = null
     var cartaJogadorJogada: Carta? = null
     private var isJogoAtivo = false
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -108,6 +109,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         isJogoAtivo = false
+        mainHandler.removeCallbacksAndMessages(null) // LIMPA A FILA DE EVENTOS
         toneG?.release()
         super.onDestroy()
     }
@@ -166,7 +168,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                     mInterstitialAd = null
                     carregarAnuncio()
-                    aoFechar()
+                    if (!isJogoAtivo) aoFechar()
                 }
             }
             mInterstitialAd?.show(this)
@@ -536,7 +538,7 @@ class MainActivity : AppCompatActivity() {
         if (isFirstDeal) {
             habilitarCliquesJogador(false)
             animarDistribuicao()
-            Handler(Looper.getMainLooper()).postDelayed({
+            mainHandler.postDelayed({
                 if (!isJogoAtivo) return@postDelayed
                 if (jogadorComeca) habilitarCliquesJogador(true)
                 else androidJogaPrimeiro()
@@ -546,7 +548,7 @@ class MainActivity : AppCompatActivity() {
                 habilitarCliquesJogador(true)
             } else {
                 habilitarCliquesJogador(false)
-                Handler(Looper.getMainLooper()).postDelayed({ 
+                mainHandler.postDelayed({ 
                     if (isJogoAtivo) androidJogaPrimeiro() 
                 }, 1000)
             }
@@ -649,11 +651,11 @@ class MainActivity : AppCompatActivity() {
         atualizarTela()
 
         if (cartaAndroidJogada != null) {
-            Handler(Looper.getMainLooper()).postDelayed({ 
+            mainHandler.postDelayed({ 
                 if (isJogoAtivo) avaliarRodada(cartaJogada, cartaAndroidJogada!!, false) 
             }, 800)
         } else {
-            Handler(Looper.getMainLooper()).postDelayed({ 
+            mainHandler.postDelayed({ 
                 if (isJogoAtivo) androidResponde(cartaJogada) 
             }, 1000)
         }
@@ -721,7 +723,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        Handler(Looper.getMainLooper()).postDelayed({
+        mainHandler.postDelayed({
             if (!isJogoAtivo) return@postDelayed
             tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
             val cartaAndroid = maoAndroid.removeAt(indexJogada)
@@ -729,7 +731,7 @@ class MainActivity : AppCompatActivity() {
             mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroid)
             atualizarTela()
 
-            Handler(Looper.getMainLooper()).postDelayed({ 
+            mainHandler.postDelayed({ 
                 if (isJogoAtivo) avaliarRodada(cartaJogador, cartaAndroid, true) 
             }, 1000)
         }, 500)
@@ -763,7 +765,7 @@ class MainActivity : AppCompatActivity() {
 
         animarDescarte(jogadorGanhou)
 
-        Handler(Looper.getMainLooper()).postDelayed({
+        mainHandler.postDelayed({
             if (!isJogoAtivo) return@postDelayed
             mostrarCarta(mesaJogador, imgMesaJogador, null)
             mostrarCarta(mesaAndroid, imgMesaAndroid, null)
@@ -837,7 +839,7 @@ class MainActivity : AppCompatActivity() {
         
         editor.apply()
 
-        Handler(Looper.getMainLooper()).postDelayed({
+        mainHandler.postDelayed({
             if (!isJogoAtivo) return@postDelayed
             
             if (partidasJogador == 2 || partidasAndroid == 2) {
@@ -857,7 +859,7 @@ class MainActivity : AppCompatActivity() {
 
                 getSharedPreferences("sonino_save", Context.MODE_PRIVATE).edit().clear().apply()
 
-                Handler(Looper.getMainLooper()).postDelayed({
+                mainHandler.postDelayed({
                     if (isJogoAtivo) {
                         // CHAMA O ANÚNCIO ANTES DE VOLTAR AO MENU
                         mostrarAnuncio { mostrarMenuPrincipal() }
