@@ -6,19 +6,6 @@
     android:background="@drawable/fundo_home"
     android:paddingTop="32dp">
 
-    <!-- Botão de Bónus Diário -->
-    <ImageButton
-        android:id="@+id/btnBonusDiario"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_margin="16dp"
-        android:background="@drawable/btn_dourado"
-        android:src="@android:drawable/ic_menu_gallery"
-        android:tint="#000000"
-        android:elevation="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
         android:layout_width="wrap_content"
@@ -26,19 +13,41 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.72" />
 
-    <Button
-        android:id="@+id/btnJogar"
-        android:layout_width="260dp"
-        android:layout_height="65dp"
-        android:background="@drawable/btn_dourado"
-        android:text="JOGAR"
-        android:textColor="#000000"
-        android:textSize="24sp"
-        android:textStyle="bold"
+    <!-- Área dos botões centrais (Presente + Jogar) -->
+    <LinearLayout
+        android:id="@+id/linearBotoesCentrais"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         app:layout_constraintBottom_toTopOf="@+id/linearBotoesMenu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/guideline" />
+        app:layout_constraintTop_toBottomOf="@+id/guideline">
+
+        <!-- Botão de Bónus Diário (Presente) -->
+        <TextView
+            android:id="@+id/btnBonusDiario"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/btn_dourado"
+            android:text="🎁"
+            android:textSize="30sp"
+            android:gravity="center"
+            android:elevation="8dp" />
+
+        <!-- Botão Jogar -->
+        <Button
+            android:id="@+id/btnJogar"
+            android:layout_width="220dp"
+            android:layout_height="65dp"
+            android:background="@drawable/btn_dourado"
+            android:text="JOGAR"
+            android:textColor="#000000"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/linearBotoesMenu"

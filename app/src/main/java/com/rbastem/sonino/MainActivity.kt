@@ -149,6 +149,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     mInterstitialAd = null
+                    // Log de diagnóstico para ver o motivo no GitHub Actions
+                    android.util.Log.e("AdMobError", "Falha ao carregar anúncio: " + adError.message)
                 }
             })
     }
