@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
             if (vibrator.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     // Amplitude 255 força a vibração máxima ignorando configurações do sistema
-                    vibrator.vibrate(VibrationEffect.createOneShot(duracao, 255))
+                    vibrator.vibrate(VibrationEffect.createOneShot(duracao, 120))
                 } else {
                     @Suppress("DEPRECATION")
                     vibrator.vibrate(duracao)
