@@ -22,6 +22,14 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.doOnLayout
 
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+
+
 data class Carta(val valor: String, val naipe: String) {
     override fun toString(): String { return "$valor $naipe" }
 }
@@ -69,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     var cartaAndroidJogada: Carta? = null
     var cartaJogadorJogada: Carta? = null
     private var isJogoAtivo = false
+    private var mInterstitialAd: InterstitialAd? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -77,6 +86,8 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+        MobileAds.initialize(this) {}
+        carregarAnuncio()
         
         val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
         dificuldade = prefs.getString("dificuldade_salva", "Difícil") ?: "Difícil"
@@ -122,6 +133,40 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+
+    fun carregarAnuncio() {
+        val adRequest = AdRequest.Builder().build()
+        InterstitialAd.load(this, "ca-app-pub-3940256099942544/1033173712", adRequest,
+            object : InterstitialAdLoadCallback() {
+                override fun onAdLoaded(ad: InterstitialAd) {
+                    mInterstitialAd = ad
+                }
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    mInterstitialAd = null
+                }
+            })
+    }
+
+    fun mostrarAnuncio(aoFechar: () -> Unit) {
+        if (mInterstitialAd != null) {
+            mInterstitialAd?.fullScreenContentCallback = object: com.google.android.gms.ads.fullscreen.FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    mInterstitialAd = null
+                    carregarAnuncio() // Prepara o próximo
+                    aoFechar()
+                }
+                override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError?) {
+                    mInterstitialAd = null
+                    carregarAnuncio()
+                    aoFechar()
+                }
+            }
+            mInterstitialAd?.show(this)
+        } else {
+            aoFechar() // Se o anúncio ainda não carregou, segue o jogo normal
         }
     }
 
@@ -770,7 +815,7 @@ class MainActivity : AppCompatActivity() {
                 getSharedPreferences("sonino_save", Context.MODE_PRIVATE).edit().clear().apply()
 
                 Handler(Looper.getMainLooper()).postDelayed({
-                    if (isJogoAtivo) mostrarMenuPrincipal()
+                    if (isJogoAtivo) mostrarAnuncio { mostrarMenuPrincipal() }
                 }, 4000)
                 
             } else {
