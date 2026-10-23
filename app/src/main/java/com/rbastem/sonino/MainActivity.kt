@@ -60,12 +60,21 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnSom: ImageButton
     
     var cartaAndroidJogada: Carta? = null
+    var cartaJogadorJogada: Carta? = null
     private var isJogoAtivo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         mostrarMenuPrincipal()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Salva automaticamente se o usuário fechar o app ou mudar de tela no meio do jogo
+        if (isJogoAtivo) {
+            salvarEstadoJogo()
+        }
     }
 
     override fun onDestroy() {
@@ -81,12 +90,48 @@ class MainActivity : AppCompatActivity() {
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
         setContentView(R.layout.activity_main)
-        trunfo = ""
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
-            partidasJogador = 0
-            partidasAndroid = 0
-            iniciarNovaPartida()
+            val savePrefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
+            if (savePrefs.getBoolean("tem_jogo_salvo", false)) {
+                AlertDialog.Builder(this)
+                    .setTitle("Jogo em Andamento")
+                    .setMessage("Existe uma partida não terminada. Deseja continuar ou iniciar um novo jogo?")
+                    .setPositiveButton("Continuar") { _, _ ->
+                        carregarEstadoJogo()
+                        setContentView(R.layout.activity_game)
+                        configurarElementosTela()
+                        atualizarTelaCompleta()
+                        
+                        // Restaura os cliques ou faz a IA jogar, dependendo de onde parou
+                        if (cartaJogadorJogada != null && cartaAndroidJogada == null) {
+                            habilitarCliquesJogador(false)
+                            androidResponde(cartaJogadorJogada!!)
+                        } else if (cartaAndroidJogada != null) {
+                            habilitarCliquesJogador(true)
+                        } else if (jogadorComeca) {
+                            habilitarCliquesJogador(true)
+                        } else {
+                            habilitarCliquesJogador(false)
+                            androidJogaPrimeiro()
+                        }
+                        
+                        configurarBotoesDeJogo()
+                    }
+                    .setNegativeButton("Novo Jogo") { _, _ ->
+                        registrarDerrotaAbandono()
+                        savePrefs.edit().clear().apply()
+                        partidasJogador = 0
+                        partidasAndroid = 0
+                        iniciarNovaPartida()
+                    }
+                    .setCancelable(false)
+                    .show()
+            } else {
+                partidasJogador = 0
+                partidasAndroid = 0
+                iniciarNovaPartida()
+            }
         }
 
         findViewById<Button>(R.id.btnRegras).setOnClickListener {
@@ -107,6 +152,119 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnHistorico).setOnClickListener {
             mostrarEstatisticas()
         }
+    }
+
+    fun configurarBotoesDeJogo() {
+        findViewById<Button>(R.id.btnMenu).setOnClickListener {
+            salvarEstadoJogo()
+            mostrarMenuPrincipal()
+        }
+        
+        btnSom.setOnClickListener {
+            somAtivado = !somAtivado
+            btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
+        }
+        btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
+    }
+
+    fun registrarDerrotaAbandono() {
+        val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        
+        // O torneio atual conta como perdido
+        editor.putInt("total_torneios", prefs.getInt("total_torneios", 0) + 1)
+        editor.putInt("torneios_perdidos", prefs.getInt("torneios_perdidos", 0) + 1)
+        
+        // A partida atual conta como perdida
+        editor.putInt("total_partidas", prefs.getInt("total_partidas", 0) + 1)
+        editor.putInt("partidas_perdidas", prefs.getInt("partidas_perdidas", 0) + 1)
+        
+        editor.apply()
+    }
+
+    fun salvarEstadoJogo() {
+        val prefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        editor.putBoolean("tem_jogo_salvo", true)
+        
+        editor.putString("baralho", baralho.joinToString(",") { "${it.valor}|${it.naipe}" })
+        editor.putString("maoJogador", maoJogador.joinToString(",") { "${it.valor}|${it.naipe}" })
+        editor.putString("maoAndroid", maoAndroid.joinToString(",") { "${it.valor}|${it.naipe}" })
+        editor.putString("trunfo", trunfo)
+        editor.putString("cartaTrunfo", if (cartaTrunfo == null) "" else "${cartaTrunfo!!.valor}|${cartaTrunfo!!.naipe}")
+        editor.putString("cartaAndroidJogada", if (cartaAndroidJogada == null) "" else "${cartaAndroidJogada!!.valor}|${cartaAndroidJogada!!.naipe}")
+        editor.putString("cartaJogadorJogada", if (cartaJogadorJogada == null) "" else "${cartaJogadorJogada!!.valor}|${cartaJogadorJogada!!.naipe}")
+        
+        editor.putInt("pontosJogador", pontosJogador)
+        editor.putInt("pontosAndroid", pontosAndroid)
+        editor.putInt("partidasJogador", partidasJogador)
+        editor.putInt("partidasAndroid", partidasAndroid)
+        editor.putBoolean("jogadorComeca", jogadorComeca)
+        editor.putString("dificuldade", dificuldade)
+        
+        editor.apply()
+    }
+
+    fun carregarEstadoJogo() {
+        val prefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("tem_jogo_salvo", false)) return
+        
+        fun parseCartas(str: String?): MutableList<Carta> {
+            if (str.isNullOrEmpty()) return mutableListOf()
+            return str.split(",").filter { it.isNotEmpty() }.map { 
+                val p = it.split("|")
+                Carta(p[0], p[1])
+            }.toMutableList()
+        }
+        
+        fun parseCarta(str: String?): Carta? {
+            if (str.isNullOrEmpty()) return null
+            val p = str.split("|")
+            return Carta(p[0], p[1])
+        }
+
+        baralho = parseCartas(prefs.getString("baralho", ""))
+        maoJogador = parseCartas(prefs.getString("maoJogador", ""))
+        maoAndroid = parseCartas(prefs.getString("maoAndroid", ""))
+        trunfo = prefs.getString("trunfo", "") ?: ""
+        cartaTrunfo = parseCarta(prefs.getString("cartaTrunfo", ""))
+        cartaAndroidJogada = parseCarta(prefs.getString("cartaAndroidJogada", ""))
+        cartaJogadorJogada = parseCarta(prefs.getString("cartaJogadorJogada", ""))
+        
+        pontosJogador = prefs.getInt("pontosJogador", 0)
+        pontosAndroid = prefs.getInt("pontosAndroid", 0)
+        partidasJogador = prefs.getInt("partidasJogador", 0)
+        partidasAndroid = prefs.getInt("partidasAndroid", 0)
+        jogadorComeca = prefs.getBoolean("jogadorComeca", true)
+        dificuldade = prefs.getString("dificuldade", "Difícil") ?: "Difícil"
+        
+        isJogoAtivo = true
+    }
+
+    fun atualizarTelaCompleta() {
+        atualizarPlacar()
+        
+        if (cartaTrunfo != null) {
+            mostrarCarta(txtTrunfoMesa, imgTrunfoMesa, cartaTrunfo)
+            imgTrunfoMesa.visibility = View.VISIBLE
+            txtTrunfoMesa.visibility = View.VISIBLE
+        }
+        
+        imgMonte.visibility = if (baralho.isNotEmpty()) View.VISIBLE else View.GONE
+        
+        if (cartaAndroidJogada != null) {
+            mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroidJogada)
+        } else {
+            mostrarCarta(mesaAndroid, imgMesaAndroid, null)
+        }
+        
+        if (cartaJogadorJogada != null) {
+            mostrarCarta(mesaJogador, imgMesaJogador, cartaJogadorJogada)
+        } else {
+            mostrarCarta(mesaJogador, imgMesaJogador, null)
+        }
+        
+        atualizarTela()
     }
 
     fun mostrarEstatisticas() {
@@ -155,21 +313,18 @@ class MainActivity : AppCompatActivity() {
         pontosJogador = 0
         pontosAndroid = 0
         jogadorComeca = true
+        baralho.clear()
+        maoJogador.clear()
+        maoAndroid.clear()
+        cartaTrunfo = null
+        cartaAndroidJogada = null
+        cartaJogadorJogada = null
+        trunfo = ""
+        
         setContentView(R.layout.activity_game)
         configurarElementosTela()
+        configurarBotoesDeJogo()
         iniciarRodada()
-        
-        findViewById<Button>(R.id.btnMenu).setOnClickListener {
-            AlertDialog.Builder(this).setTitle("Sair").setMessage("Deseja voltar ao menu?")
-                .setPositiveButton("Sim") { _, _ -> mostrarMenuPrincipal() }
-                .setNegativeButton("Não", null).show()
-        }
-        
-        btnSom.setOnClickListener {
-            somAtivado = !somAtivado
-            btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
-        }
-        btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
     }
 
     fun configurarElementosTela() {
@@ -225,7 +380,6 @@ class MainActivity : AppCompatActivity() {
             cartaTrunfo = baralho.last()
             trunfo = cartaTrunfo!!.naipe
             
-            // MOSTRAR O TRUNFO NA MESA
             mostrarCarta(txtTrunfoMesa, imgTrunfoMesa, cartaTrunfo)
             imgTrunfoMesa.visibility = View.VISIBLE
             txtTrunfoMesa.visibility = View.VISIBLE
@@ -242,6 +396,7 @@ class MainActivity : AppCompatActivity() {
         mesaJogador.text = ""; mesaAndroid.text = ""
         imgMesaJogador.visibility = ImageView.GONE; imgMesaAndroid.visibility = ImageView.GONE
         cartaAndroidJogada = null
+        cartaJogadorJogada = null
         
         atualizarTela()
         atualizarPlacar()
@@ -336,6 +491,7 @@ class MainActivity : AppCompatActivity() {
         tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
 
         val cartaJogada = maoJogador.removeAt(index)
+        cartaJogadorJogada = cartaJogada
         mostrarCarta(mesaJogador, imgMesaJogador, cartaJogada)
         atualizarTela()
 
@@ -405,6 +561,7 @@ class MainActivity : AppCompatActivity() {
             if (!isJogoAtivo) return@postDelayed
             tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
             val cartaAndroid = maoAndroid.removeAt(indexJogada)
+            cartaAndroidJogada = cartaAndroid
             mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroid)
             atualizarTela()
 
@@ -439,6 +596,8 @@ class MainActivity : AppCompatActivity() {
             if (!isJogoAtivo) return@postDelayed
             mostrarCarta(mesaJogador, imgMesaJogador, null)
             mostrarCarta(mesaAndroid, imgMesaAndroid, null)
+            cartaAndroidJogada = null
+            cartaJogadorJogada = null
             
             if (baralho.isNotEmpty()) {
                 if (jogadorGanhou) {
@@ -521,11 +680,15 @@ class MainActivity : AppCompatActivity() {
                 }
                 editor.apply()
 
+                // Limpa o save state, pois o torneio acabou
+                getSharedPreferences("sonino_save", Context.MODE_PRIVATE).edit().clear().apply()
+
                 Handler(Looper.getMainLooper()).postDelayed({
                     if (isJogoAtivo) mostrarMenuPrincipal()
                 }, 4000)
                 
             } else {
+                // Apenas limpa as mãos para a próxima partida, o save continua ativo
                 baralho.clear()
                 maoJogador.clear()
                 maoAndroid.clear()

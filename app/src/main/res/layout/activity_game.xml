@@ -66,7 +66,7 @@
         android:layout_height="40dp"
         android:layout_margin="8dp"
         android:background="@drawable/btn_escuro"
-        android:text="≡"
+        android:text="⬅"
         android:textColor="@color/dourado"
         android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
