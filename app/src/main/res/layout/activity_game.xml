@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/fundo_tabuleiro">
 
-    <!-- Topo: Placar com Caixas -->
+    <!-- Topo: Placar -->
     <LinearLayout
         android:id="@+id/topoPlacar"
         android:layout_width="match_parent"
@@ -72,16 +72,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
-    <!-- Botão de Som (Canto Direito) -->
-    <Button
+    <!-- Botão de Som (ImageButton para melhor compatibilidade) -->
+    <ImageButton
         android:id="@+id/btnSom"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_margin="8dp"
         android:background="@drawable/btn_escuro"
-        android:text="🔊"
-        android:textColor="@color/dourado"
-        android:textSize="18sp"
+        android:src="@android:drawable/ic_lock_silent_mode_off"
+        android:tint="@color/dourado"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topoPlacar" />
 
@@ -101,7 +100,7 @@
         <ImageView android:id="@+id/cartaAndroid3" android:layout_width="60dp" android:layout_height="90dp" android:layout_margin="4dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
     </LinearLayout>
 
-    <!-- Monte e Trunfo -->
+    <!-- Monte e Trunfo (CORRIGIDO) -->
     <RelativeLayout
         android:id="@+id/areaMonte"
         android:layout_width="wrap_content"
@@ -111,12 +110,41 @@
         app:layout_constraintTop_toTopOf="@+id/areaMesa"
         app:layout_constraintBottom_toBottomOf="@+id/areaMesa">
 
-        <FrameLayout android:layout_width="80dp" android:layout_height="55dp" android:layout_marginStart="25dp" android:layout_marginTop="10dp">
-            <ImageView android:id="@+id/imgTrunfoMesa" android:layout_width="55dp" android:layout_height="80dp" android:layout_gravity="center" android:rotation="90" android:scaleType="fitCenter" android:visibility="gone"/>
-            <TextView android:id="@+id/txtTrunfoMesa" android:layout_width="55dp" android:layout_height="80dp" android:layout_gravity="center" android:rotation="90" android:gravity="center" android:textStyle="bold" android:visibility="gone"/>
+        <!-- Carta de Trunfo (Deitada, ao fundo) -->
+        <!-- O FrameLayout agora tem o tamanho exato da imagem rotacionada -->
+        <FrameLayout
+            android:layout_width="80dp"
+            android:layout_height="55dp"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="10dp">
+            
+            <ImageView 
+                android:id="@+id/imgTrunfoMesa" 
+                android:layout_width="match_parent" 
+                android:layout_height="match_parent" 
+                android:layout_gravity="center"
+                android:rotation="90" 
+                android:scaleType="fitCenter" 
+                android:visibility="gone"/>
+                
+            <TextView 
+                android:id="@+id/txtTrunfoMesa" 
+                android:layout_width="match_parent" 
+                android:layout_height="match_parent" 
+                android:layout_gravity="center"
+                android:rotation="90" 
+                android:gravity="center" 
+                android:textStyle="bold" 
+                android:visibility="gone"/>
         </FrameLayout>
 
-        <ImageView android:id="@+id/imgMonte" android:layout_width="55dp" android:layout_height="80dp" android:src="@drawable/verso_carta" android:scaleType="fitCenter"/>
+        <!-- Monte de cartas (Por cima do trunfo) -->
+        <ImageView
+            android:id="@+id/imgMonte"
+            android:layout_width="55dp"
+            android:layout_height="80dp"
+            android:src="@drawable/verso_carta"
+            android:scaleType="fitCenter"/>
     </RelativeLayout>
 
     <!-- Mesa Central -->
@@ -144,13 +172,15 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Feedback de Fim de Jogo (Maior e Central) -->
+    <!-- Feedback de Fim de Jogo -->
     <TextView
         android:id="@+id/txtFeedbackRodada"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_escuro"
         android:padding="24dp"
+        android:maxWidth="300dp"
+        android:gravity="center"
         android:textColor="@color/dourado"
         android:textSize="24sp"
         android:textStyle="bold"

@@ -8,7 +8,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.animation.OvershootInterpolator
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -55,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var imgTrunfoMesa: ImageView
     lateinit var txtTrunfoMesa: TextView
     lateinit var txtFeedbackRodada: TextView
-    lateinit var btnSom: Button
+    lateinit var btnSom: ImageButton
     
     var cartaAndroidJogada: Carta? = null
     private var isJogoAtivo = false
@@ -113,7 +115,6 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
         
-        // Carrega os dados
         val totalPontos = prefs.getInt("total_pontos", 0)
         val totalTorneios = prefs.getInt("total_torneios", 0)
         val torneiosGanhos = prefs.getInt("torneios_ganhos", 0)
@@ -124,7 +125,6 @@ class MainActivity : AppCompatActivity() {
         val partidasPerdidas = prefs.getInt("partidas_perdidas", 0)
         val partidasEmpatadas = prefs.getInt("partidas_empatadas", 0)
 
-        // Atualiza os textos da tela
         findViewById<TextView>(R.id.txtNivelStats).text = "Nível: $dificuldade"
         findViewById<TextView>(R.id.txtPontos).text = "Pontos: $totalPontos"
         findViewById<TextView>(R.id.txtTotalTorneios).text = "Total de Torneios: $totalTorneios"
@@ -135,18 +135,16 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.txtPartidasPerdidas).text = "Perdidas: $partidasPerdidas"
         findViewById<TextView>(R.id.txtPartidasEmpatadas).text = "Empatadas: $partidasEmpatadas"
 
-        // Botão Voltar
         findViewById<Button>(R.id.btnVoltarStats).setOnClickListener {
             mostrarMenuPrincipal()
         }
 
-        // Botão Resetar
         findViewById<Button>(R.id.btnResetStats).setOnClickListener {
             AlertDialog.Builder(this).setTitle("Resetar Estatísticas")
                 .setMessage("Tem certeza que deseja apagar todos os dados?")
                 .setPositiveButton("Sim") { _, _ ->
                     prefs.edit().clear().apply()
-                    mostrarEstatisticas() // Recarrega a tela zerada
+                    mostrarEstatisticas()
                 }
                 .setNegativeButton("Não", null).show()
         }
@@ -169,9 +167,9 @@ class MainActivity : AppCompatActivity() {
         
         btnSom.setOnClickListener {
             somAtivado = !somAtivado
-            btnSom.text = if (somAtivado) "🔊" else "🔇"
+            btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
         }
-        btnSom.text = if (somAtivado) "🔊" else "🔇"
+        btnSom.setImageResource(if (somAtivado) android.R.drawable.ic_lock_silent_mode_off else android.R.drawable.ic_lock_silent_mode)
     }
 
     fun configurarElementosTela() {
@@ -227,8 +225,10 @@ class MainActivity : AppCompatActivity() {
             cartaTrunfo = baralho.last()
             trunfo = cartaTrunfo!!.naipe
             
+            // Mostra o trunfo
             mostrarCarta(txtTrunfoMesa, imgTrunfoMesa, cartaTrunfo)
             imgTrunfoMesa.visibility = View.VISIBLE
+            txtTrunfoMesa.visibility = View.VISIBLE
 
             for (i in 0..2) {
                 maoJogador.add(baralho.removeAt(0))
@@ -267,8 +267,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun animarDistribuicao() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (!isJogoAtivo) return@postDelayed
+        // Usa doOnLayout para garantir que o layout já foi desenhado
+        imgMonte.doOnLayout {
+            if (!isJogoAtivo) return@doOnLayout
             val startLoc = IntArray(2)
             imgMonte.getLocationOnScreen(startLoc)
             val startX = startLoc[0].toFloat()
@@ -301,8 +302,7 @@ class MainActivity : AppCompatActivity() {
             uiImgsAndroid.forEach { if (it.visibility == View.VISIBLE) jogarCartaAnimada(it) }
 
             tocarSom(ToneGenerator.TONE_PROP_BEEP2, 200)
-
-        }, 100)
+        }
     }
 
     fun habilitarCliquesJogador(habilitar: Boolean) {
