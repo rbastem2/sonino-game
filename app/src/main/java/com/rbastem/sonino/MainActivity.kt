@@ -317,7 +317,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnRegras).setOnClickListener {
             vibrar()
             AlertDialog.Builder(this).setTitle("Regras do SONINO")
-                .setMessage("• Baralho de 40 cartas.\n• Trunfo: última carta do baralho.\n• Ganha a rodada o trunfo mais forte ou a carta mais forte do naipe inicial.\n• Quem ganha, joga primeiro.\n• Vence quem fizer 61 pontos.\n• Torneio: melhor de 3.")
+                .setMessage("• Baralho de 40 cartas.\n• Trunfo: última carta do baralho.\n• Ganha a rodada o trunfo mais forte ou a carta mais forte do naipe inicial.\n• Quem ganha, joga primeiro.\n• Vence quem fizer 61 pontos.\n• Torneio: melhor de 5 (o primeiro a vencer 3 partidas ganha).")
                 .setPositiveButton("Entendi", null).show()
         }
 
@@ -963,8 +963,8 @@ class MainActivity : AppCompatActivity() {
             if (!isJogoAtivo) return@postDelayed
             
             // Verifica se o torneio (melhor de 3) acabou
-            if (partidasJogador == 2 || partidasAndroid == 2) {
-                val vencedorFinal = if (partidasJogador == 2) "VOCÊ VENCEU O TORNEIO!" else "O ANDROID VENCEU O TORNEIO!"
+            if (partidasJogador == 3 || partidasAndroid == 3) {
+                val vencedorFinal = if (partidasJogador == 3) "VOCÊ VENCEU O TORNEIO!" else "O ANDROID VENCEU O TORNEIO!"
                 mostrarFeedback(vencedorFinal)
                 tocarSom(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
                 vibrar(300)
