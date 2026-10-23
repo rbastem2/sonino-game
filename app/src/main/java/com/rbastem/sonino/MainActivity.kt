@@ -28,6 +28,7 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.fullscreen.FullScreenContentCallback
 
 
 data class Carta(val valor: String, val naipe: String) {
@@ -152,7 +153,7 @@ class MainActivity : AppCompatActivity() {
 
     fun mostrarAnuncio(aoFechar: () -> Unit) {
         if (mInterstitialAd != null) {
-            mInterstitialAd?.fullScreenContentCallback = object: com.google.android.gms.ads.fullscreen.FullScreenContentCallback() {
+            mInterstitialAd?.fullScreenContentCallback = object: FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     mInterstitialAd = null
                     carregarAnuncio() // Prepara o próximo
