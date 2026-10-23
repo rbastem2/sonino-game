@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     var maoAndroid = mutableListOf<Carta>()
     var trunfo = ""
     var cartaTrunfo: Carta? = null
+    var cartasJaJogadas = mutableListOf<Carta>() // Memória para o Mestre
     
     var pontosJogador = 0
     var pontosAndroid = 0
@@ -66,12 +67,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+        
+        // Carrega a dificuldade salva
+        val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
+        dificuldade = prefs.getString("dificuldade_salva", "Difícil") ?: "Difícil"
+        
         mostrarMenuPrincipal()
     }
 
     override fun onStop() {
         super.onStop()
-        // Salva automaticamente se o usuário fechar o app ou mudar de tela no meio do jogo
         if (isJogoAtivo) {
             salvarEstadoJogo()
         }
@@ -103,7 +108,6 @@ class MainActivity : AppCompatActivity() {
                         configurarElementosTela()
                         atualizarTelaCompleta()
                         
-                        // Restaura os cliques ou faz a IA jogar, dependendo de onde parou
                         if (cartaJogadorJogada != null && cartaAndroidJogada == null) {
                             habilitarCliquesJogador(false)
                             androidResponde(cartaJogadorJogada!!)
@@ -145,6 +149,8 @@ class MainActivity : AppCompatActivity() {
             val indexAtual = opcoes.indexOf(dificuldade)
             AlertDialog.Builder(this).setTitle("Nível do Android").setSingleChoiceItems(opcoes, indexAtual) { dialog, which ->
                 dificuldade = opcoes[which]
+                // Salva a nova dificuldade
+                getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putString("dificuldade_salva", dificuldade).apply()
                 dialog.dismiss()
             }.show()
         }
@@ -170,15 +176,10 @@ class MainActivity : AppCompatActivity() {
     fun registrarDerrotaAbandono() {
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
         val editor = prefs.edit()
-        
-        // O torneio atual conta como perdido
         editor.putInt("total_torneios", prefs.getInt("total_torneios", 0) + 1)
         editor.putInt("torneios_perdidos", prefs.getInt("torneios_perdidos", 0) + 1)
-        
-        // A partida atual conta como perdida
         editor.putInt("total_partidas", prefs.getInt("total_partidas", 0) + 1)
         editor.putInt("partidas_perdidas", prefs.getInt("partidas_perdidas", 0) + 1)
-        
         editor.apply()
     }
 
@@ -190,6 +191,7 @@ class MainActivity : AppCompatActivity() {
         editor.putString("baralho", baralho.joinToString(",") { "${it.valor}|${it.naipe}" })
         editor.putString("maoJogador", maoJogador.joinToString(",") { "${it.valor}|${it.naipe}" })
         editor.putString("maoAndroid", maoAndroid.joinToString(",") { "${it.valor}|${it.naipe}" })
+        editor.putString("cartasJaJogadas", cartasJaJogadas.joinToString(",") { "${it.valor}|${it.naipe}" })
         editor.putString("trunfo", trunfo)
         editor.putString("cartaTrunfo", if (cartaTrunfo == null) "" else "${cartaTrunfo!!.valor}|${cartaTrunfo!!.naipe}")
         editor.putString("cartaAndroidJogada", if (cartaAndroidJogada == null) "" else "${cartaAndroidJogada!!.valor}|${cartaAndroidJogada!!.naipe}")
@@ -200,7 +202,6 @@ class MainActivity : AppCompatActivity() {
         editor.putInt("partidasJogador", partidasJogador)
         editor.putInt("partidasAndroid", partidasAndroid)
         editor.putBoolean("jogadorComeca", jogadorComeca)
-        editor.putString("dificuldade", dificuldade)
         
         editor.apply()
     }
@@ -226,6 +227,7 @@ class MainActivity : AppCompatActivity() {
         baralho = parseCartas(prefs.getString("baralho", ""))
         maoJogador = parseCartas(prefs.getString("maoJogador", ""))
         maoAndroid = parseCartas(prefs.getString("maoAndroid", ""))
+        cartasJaJogadas = parseCartas(prefs.getString("cartasJaJogadas", ""))
         trunfo = prefs.getString("trunfo", "") ?: ""
         cartaTrunfo = parseCarta(prefs.getString("cartaTrunfo", ""))
         cartaAndroidJogada = parseCarta(prefs.getString("cartaAndroidJogada", ""))
@@ -236,7 +238,6 @@ class MainActivity : AppCompatActivity() {
         partidasJogador = prefs.getInt("partidasJogador", 0)
         partidasAndroid = prefs.getInt("partidasAndroid", 0)
         jogadorComeca = prefs.getBoolean("jogadorComeca", true)
-        dificuldade = prefs.getString("dificuldade", "Difícil") ?: "Difícil"
         
         isJogoAtivo = true
     }
@@ -272,12 +273,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_stats)
 
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
-        
         val totalPontos = prefs.getInt("total_pontos", 0)
         val totalTorneios = prefs.getInt("total_torneios", 0)
         val torneiosGanhos = prefs.getInt("torneios_ganhos", 0)
         val torneiosPerdidos = prefs.getInt("torneios_perdidos", 0)
-        
         val totalPartidas = prefs.getInt("total_partidas", 0)
         val partidasGanhas = prefs.getInt("partidas_ganhas", 0)
         val partidasPerdidas = prefs.getInt("partidas_perdidas", 0)
@@ -316,6 +315,7 @@ class MainActivity : AppCompatActivity() {
         baralho.clear()
         maoJogador.clear()
         maoAndroid.clear()
+        cartasJaJogadas.clear()
         cartaTrunfo = null
         cartaAndroidJogada = null
         cartaJogadorJogada = null
@@ -510,14 +510,36 @@ class MainActivity : AppCompatActivity() {
         if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
         var indexJogada = 0
-        if (dificuldade == "Fácil") {
-             indexJogada = (0 until maoAndroid.size).random()
-        } else {
-             var menorValor = 100
-             for (i in maoAndroid.indices) {
-                 val p = pontosCartas[maoAndroid[i].valor] ?: 0
-                 if (p < menorValor) { menorValor = p; indexJogada = i }
-             }
+        
+        when (dificuldade) {
+            "Fácil" -> {
+                indexJogada = maoAndroid.indices.random()
+            }
+            "Difícil" -> {
+                // Tenta jogar a carta mais alta que não seja trunfo. Se só tiver trunfo, joga a mais alta.
+                val naoTrunfos = maoAndroid.indices.filter { maoAndroid[it].naipe != trunfo }
+                if (naoTrunfos.isNotEmpty()) {
+                    indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                } else {
+                    indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                }
+            }
+            "Mestre" -> {
+                // MESTRE: Se tem um Ás, joga ele para garantir a rodada.
+                val ases = maoAndroid.indices.filter { maoAndroid[it].valor == "A" }
+                if (ases.isNotEmpty()) {
+                    indexJogada = ases.first()
+                } else {
+                    // Joga a maior carta de um naipe que ele tem certeza que o jogador não tem (baseado nas jogadas).
+                    // Simplificação: Joga a maior carta não-trunfo, ou maior trunfo se não tiver escolha.
+                    val naoTrunfos = maoAndroid.indices.filter { maoAndroid[it].naipe != trunfo }
+                    if (naoTrunfos.isNotEmpty()) {
+                        indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                    } else {
+                        indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                    }
+                }
+            }
         }
 
         tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
@@ -532,27 +554,54 @@ class MainActivity : AppCompatActivity() {
         if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
         var indexJogada = 0
+        val pontosNaMesa = pontosCartas[cartaJogador.valor] ?: 0
         
-        if (dificuldade == "Fácil") {
-            indexJogada = (0 until maoAndroid.size).random()
-        } else {
-            var cartaQueGanha = -1
-            for (i in maoAndroid.indices) {
-                val c = maoAndroid[i]
-                if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
-                    cartaQueGanha = i; break
-                } else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
-                    cartaQueGanha = i; break
+        when (dificuldade) {
+            "Fácil" -> {
+                indexJogada = maoAndroid.indices.random()
+            }
+            "Difícil" -> {
+                var cartasQueGanham = mutableListOf<Int>()
+                for (i in maoAndroid.indices) {
+                    val c = maoAndroid[i]
+                    if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
+                        cartasQueGanham.add(i)
+                    } else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
+                        cartasQueGanham.add(i)
+                    }
+                }
+
+                if (cartasQueGanham.isNotEmpty()) {
+                    // Usa a menor carta possível para ganhar
+                    indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                } else {
+                    // Descarta a carta de menor valor (0 pontos)
+                    indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
                 }
             }
-            
-            if (cartaQueGanha != -1) { 
-                indexJogada = cartaQueGanha 
-            } else {
-                var menorValor = 100
+            "Mestre" -> {
+                var cartasQueGanham = mutableListOf<Int>()
                 for (i in maoAndroid.indices) {
-                    val p = pontosCartas[maoAndroid[i].valor] ?: 0
-                    if (p < menorValor) { menorValor = p; indexJogada = i }
+                    val c = maoAndroid[i]
+                    if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) {
+                        cartasQueGanham.add(i)
+                    } else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) {
+                        cartasQueGanham.add(i)
+                    }
+                }
+
+                if (cartasQueGanham.isNotEmpty()) {
+                    // MESTRE: Não gasta trunfo para ganhar rodada de 0 pontos.
+                    if (pontosNaMesa == 0 && !cartasQueGanham.any { maoAndroid[it].naipe != trunfo }) {
+                        // Só tem trunfo para ganhar, e a mesa vale 0. Descarta a menor carta.
+                        indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
+                    } else {
+                        // Ganha a rodada usando a menor carta que vence
+                        indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
+                    }
+                } else {
+                    // Não pode ganhar. Descarta a menor carta de 0 ponto.
+                    indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
                 }
             }
         }
@@ -581,6 +630,10 @@ class MainActivity : AppCompatActivity() {
             else if (cartaAndroid.naipe == trunfo) jogadorGanhou = false
             else jogadorGanhou = jogadorFoiPrimeiro 
         }
+
+        // Adiciona à memória do Mestre
+        cartasJaJogadas.add(cartaJogador)
+        cartasJaJogadas.add(cartaAndroid)
 
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
         if (jogadorGanhou) {
@@ -650,7 +703,6 @@ class MainActivity : AppCompatActivity() {
         atualizarPlacar()
         mostrarFeedback(mensagem)
 
-        // Salvar estatísticas da partida
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
         var editor = prefs.edit()
         editor.putInt("total_pontos", prefs.getInt("total_pontos", 0) + pontosJogador)
@@ -670,7 +722,6 @@ class MainActivity : AppCompatActivity() {
                 mostrarFeedback(vencedorFinal)
                 tocarSom(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
                 
-                // Salvar estatísticas do torneio
                 editor = prefs.edit()
                 editor.putInt("total_torneios", prefs.getInt("total_torneios", 0) + 1)
                 if (partidasJogador == 2) {
@@ -680,7 +731,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 editor.apply()
 
-                // Limpa o save state, pois o torneio acabou
                 getSharedPreferences("sonino_save", Context.MODE_PRIVATE).edit().clear().apply()
 
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -688,10 +738,10 @@ class MainActivity : AppCompatActivity() {
                 }, 4000)
                 
             } else {
-                // Apenas limpa as mãos para a próxima partida, o save continua ativo
                 baralho.clear()
                 maoJogador.clear()
                 maoAndroid.clear()
+                cartasJaJogadas.clear()
                 iniciarNovaPartida() 
             }
         }, 4000)
