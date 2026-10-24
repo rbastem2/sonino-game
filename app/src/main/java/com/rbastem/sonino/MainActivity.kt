@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
     /** Prepara um anúncio de tela cheia nos bastidores */
     fun carregarAnuncio() {
         val adRequest = AdRequest.Builder().build()
-        InterstitialAd.load(this, "ca-app-pub-3940256099942544/1033173712", adRequest,
+        InterstitialAd.load(this, "ca-app-pub-6316829094801811/4524927652", adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) { mInterstitialAd = ad }
                 override fun onAdFailedToLoad(adError: LoadAdError) { mInterstitialAd = null }
