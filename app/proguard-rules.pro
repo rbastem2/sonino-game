@@ -8,3 +8,8 @@
     public static *** v(...);
     public static *** i(...);
 }
+
+# Regras do Google AdMob e UMP (Consentimento)
+-keep class com.google.android.gms.ads.** { *; }
+-keep class com.google.android.ump.** { *; }
+-dontwarn com.google.android.gms.ads.**
