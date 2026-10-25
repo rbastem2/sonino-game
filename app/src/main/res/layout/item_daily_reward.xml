@@ -18,30 +18,12 @@
         android:textSize="12sp"
         android:textStyle="bold" />
 
-    
-    <FrameLayout
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginVertical="4dp"
-        android:elevation="4dp">
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/bg_coin_sonino" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="S"
-            android:textColor="#0B3B24"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:shadowColor="#FFF8DC"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="1" />
-    </FrameLayout>
-    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🪙"
+        android:textSize="28sp"
+        android:layout_marginVertical="4dp"/>
 
     <TextView
         android:id="@+id/txtQtdMoedas"
