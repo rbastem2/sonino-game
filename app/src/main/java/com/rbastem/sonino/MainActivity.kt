@@ -21,6 +21,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.doOnLayout
+
+import android.widget.EditText
+import com.google.firebase.auth.FirebaseAuth
+
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -116,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         
         // 4. Inicializa os Anúncios (AdMob)
         MobileAds.initialize(this) {}
+        FirebaseManager.iniciarSessao { }
         carregarAnuncio()
         
         // 5. Carrega a dificuldade que o jogador escolheu por último
@@ -334,6 +339,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 5. Botão Estatísticas
+        
+        findViewById<Button>(R.id.btnJogarOnline).setOnClickListener {
+            vibrar()
+            mostrarTelaMultiplayer()
+        }
+
         findViewById<Button>(R.id.btnHistorico).setOnClickListener {
             vibrar()
             mostrarEstatisticas()
@@ -341,6 +352,69 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Configura a navegação e os botões dentro do tabuleiro de jogo */
+
+    fun mostrarTelaMultiplayer() {
+        isJogoAtivo = false
+        setContentView(R.layout.activity_multiplayer)
+
+        findViewById<Button>(R.id.btnVoltarMulti).setOnClickListener {
+            vibrar()
+            mostrarMenuPrincipal()
+        }
+
+        findViewById<Button>(R.id.btnCriarSala).setOnClickListener {
+            vibrar()
+            findViewById<TextView>(R.id.txtStatusSala).text = "A criar sala..."
+            FirebaseManager.criarSala(
+                onSalaCriada = { codigo ->
+                    findViewById<TextView>(R.id.txtCodigoSala).text = "Código: $codigo"
+                    findViewById<TextView>(R.id.txtStatusSala).text = "Aguardando oponente..."
+                    
+                    // Ouve quando o convidado entrar na sala
+                    FirebaseManager.escutarSala(codigo) { sala ->
+                        if (sala.status == "JOGANDO") {
+                            // O oponente entrou! Inicia o jogo multiplayer
+                            FirebaseManager.pararDeEscutar()
+                            iniciarJogoOnline(sala)
+                        }
+                    }
+                },
+                onErro = { erro ->
+                    findViewById<TextView>(R.id.txtStatusSala).text = "Erro: $erro"
+                }
+            )
+        }
+
+        findViewById<Button>(R.id.btnEntrarSala).setOnClickListener {
+            vibrar()
+            val codigo = findViewById<EditText>(R.id.edtCodigoEntrar).text.toString()
+            if (codigo.length == 4) {
+                findViewById<TextView>(R.id.txtStatusSala).text = "A entrar na sala $codigo..."
+                FirebaseManager.entrarSala(
+                    codigo = codigo,
+                    onSalaEntrada = { sala ->
+                        iniciarJogoOnline(sala)
+                    },
+                    onErro = { erro ->
+                        findViewById<TextView>(R.id.txtStatusSala).text = "Erro: $erro"
+                    }
+                )
+            } else {
+                findViewById<TextView>(R.id.txtStatusSala).text = "Digite um código de 4 dígitos."
+            }
+        }
+    }
+
+    fun iniciarJogoOnline(sala: com.rbastem.sonino.Sala) {
+        // Aqui vamos preparar a lógica para o modo online na próxima etapa.
+        // Por agora, apenas mostramos uma mensagem de sucesso.
+        AlertDialog.Builder(this)
+            .setTitle("Conectado!")
+            .setMessage("Oponente encontrado! Sala: ${sala.codigo}. (A interface do jogo online será construída na próxima etapa).")
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
     fun configurarBotoesDeJogo() {
         // Botão de voltar (Salva o jogo e volta ao menu instantaneamente)
         findViewById<Button>(R.id.btnMenu).setOnClickListener {
