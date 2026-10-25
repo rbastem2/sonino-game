@@ -234,6 +234,7 @@ class MainActivity : AppCompatActivity() {
 
         // 1. Lógica do Bónus Diário
 
+
         findViewById<TextView>(R.id.btnBonusDiario).setOnClickListener {
             vibrar()
             val prefs = getSharedPreferences("sonino_bonus", Context.MODE_PRIVATE)
@@ -242,62 +243,83 @@ class MainActivity : AppCompatActivity() {
             val umDiaEmMillis = 24 * 60 * 60 * 1000L
             val tempoDecorrido = agoraMillis - ultimaDataMillis
 
-            if (tempoDecorrido in 0 until umDiaEmMillis) {
-                val dialogViewJaResgatado = layoutInflater.inflate(R.layout.activity_daily_reward, null)
-                dialogViewJaResgatado.findViewById<TextView>(R.id.txtDiaBonus).text = "Já Resgatado"
-                dialogViewJaResgatado.findViewById<TextView>(R.id.txtValorBonus).text = "Volte amanhã!"
-                dialogViewJaResgatado.findViewById<Button>(R.id.btnReceberBonus).text = "FECHAR"
+            var sequenciaAtual = prefs.getInt("sequencia", 0)
+            val jaResgatouHoje = tempoDecorrido in 0 until umDiaEmMillis
+            val tentouTrapaca = tempoDecorrido < 0
+            
+            // Se passou mais de 48h ou completou os 7 dias, a sequência reinicia
+            if (!jaResgatouHoje && (tempoDecorrido > (2 * umDiaEmMillis) || sequenciaAtual >= 7)) {
+                sequenciaAtual = 0
+            }
+            
+            // Se ele ainda não resgatou hoje, o dia "ativo" para mostrar é a sequência + 1
+            val diaParaMostrar = if (jaResgatouHoje) sequenciaAtual else sequenciaAtual + 1
 
-                val dialogJaResgatado = AlertDialog.Builder(this)
-                    .setView(dialogViewJaResgatado)
-                    .setCancelable(true)
-                    .create()
+            val dialogView = layoutInflater.inflate(R.layout.activity_daily_reward, null)
+            val layoutDias = dialogView.findViewById<LinearLayout>(R.id.layoutDias)
+            val btnReceber = dialogView.findViewById<Button>(R.id.btnReceberBonus)
+            val txtStatus = dialogView.findViewById<TextView>(R.id.txtStatusBonus)
 
-                dialogViewJaResgatado.findViewById<Button>(R.id.btnReceberBonus).setOnClickListener {
-                    dialogJaResgatado.dismiss()
-                }
-                dialogJaResgatado.show()
-            } else if (tempoDecorrido < 0) {
-                AlertDialog.Builder(this)
-                    .setTitle("Erro de Segurança")
-                    .setMessage("A data do seu telemóvel está incorreta.")
-                    .setPositiveButton("OK", null).show()
-            } else {
-                var sequencia = prefs.getInt("sequencia", 0)
-                // Se passou mais de 48h, reinicia a sequência para o dia 1
-                if (tempoDecorrido > (2 * umDiaEmMillis) || sequencia >= 7) {
-                    sequencia = 1
+            if (tentouTrapaca) {
+                txtStatus.text = "Erro: A data do seu telemóvel está errada."
+                btnReceber.isEnabled = false
+                btnReceber.text = "FECHAR"
+                btnReceber.setBackgroundResource(R.drawable.btn_escuro)
+                btnReceber.setTextColor(Color.parseColor("#D4AF37"))
+            } else if (jaResgatouHoje) {
+                txtStatus.text = "Já resgatou hoje! Volte amanhã."
+                btnReceber.text = "FECHAR"
+                btnReceber.setBackgroundResource(R.drawable.btn_escuro)
+                btnReceber.setTextColor(Color.parseColor("#D4AF37"))
+            }
+
+            val premios = intArrayOf(50, 100, 150, 200, 300, 400, 500)
+            
+            // Criar os 7 cartões
+            for (i in 0 until 7) {
+                val itemView = layoutInflater.inflate(R.layout.item_daily_reward, layoutDias, false)
+                val txtDia = itemView.findViewById<TextView>(R.id.txtDiaSemana)
+                val txtQtd = itemView.findViewById<TextView>(R.id.txtQtdMoedas)
+                val card = itemView.findViewById<LinearLayout>(R.id.cardDia)
+
+                txtDia.text = "Dia ${i + 1}"
+                txtQtd.text = "${premios[i]}"
+
+                if (i + 1 < diaParaMostrar || (jaResgatouHoje && i + 1 == diaParaMostrar)) {
+                    // Dias passados (ou o de hoje já resgatado)
+                    itemView.alpha = 0.5f
+                    txtQtd.setTextColor(Color.GRAY)
+                } else if (i + 1 == diaParaMostrar) {
+                    // Dia Atual (Destaque Dourado)
+                    card.setBackgroundResource(R.drawable.btn_dourado)
+                    txtDia.setTextColor(Color.BLACK)
+                    txtQtd.setTextColor(Color.BLACK)
                 } else {
-                    sequencia++
+                    // Dias Futuros
+                    txtQtd.setTextColor(Color.parseColor("#D4AF37"))
                 }
+                layoutDias.addView(itemView)
+            }
 
-                // Tabela de prémios (Dia 1 a 7)
-                val premios = intArrayOf(50, 100, 150, 200, 300, 400, 500)
-                val valorBonus = premios[sequencia - 1]
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create()
 
-                // Abrir o Dialog personalizado
-                val dialogView = layoutInflater.inflate(R.layout.activity_daily_reward, null)
-                dialogView.findViewById<TextView>(R.id.txtDiaBonus).text = "Dia \$sequencia de 7"
-                dialogView.findViewById<TextView>(R.id.txtValorBonus).text = "🪙 +\$valorBonus Moedas"
-
-                val dialog = AlertDialog.Builder(this)
-                    .setView(dialogView)
-                    .setCancelable(false)
-                    .create()
-
-                dialogView.findViewById<Button>(R.id.btnReceberBonus).setOnClickListener {
-                    vibrar()
+            btnReceber.setOnClickListener {
+                vibrar()
+                if (!jaResgatouHoje && !tentouTrapaca) {
+                    val valorBonus = premios[sequenciaAtual]
                     saldoMoedas += valorBonus
-                    // Guardar o novo saldo e a data
-                    prefs.edit().putLong("ultima_data_millis", agoraMillis).putInt("sequencia", sequencia).apply()
+                    prefs.edit().putLong("ultima_data_millis", agoraMillis).putInt("sequencia", sequenciaAtual + 1).apply()
                     getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putInt("saldo_moedas", saldoMoedas).apply()
                     
-                    findViewById<TextView>(R.id.txtMoedas).text = "🪙 $saldoMoedas"
+                    findViewById<TextView>(R.id.txtMoedas).text = "$saldoMoedas"
                     tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
-                    dialog.dismiss()
                 }
-                dialog.show()
+                dialog.dismiss()
             }
+            dialog.show()
         }
 
         findViewById<Button>(R.id.btnJogar).setOnClickListener {

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cardDia"
+    android:layout_width="80dp"
+    android:layout_height="110dp"
+    android:layout_margin="4dp"
+    android:background="@drawable/btn_escuro"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/txtDiaSemana"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dia 1"
+        android:textColor="@color/branco"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🪙"
+        android:textSize="28sp"
+        android:layout_marginVertical="4dp"/>
+
+    <TextView
+        android:id="@+id/txtQtdMoedas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="50"
+        android:textColor="@color/dourado"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</LinearLayout>
