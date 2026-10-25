@@ -8,21 +8,7 @@
     android:fitsSystemWindows="true">
 
     
-    <TextView
-        android:id="@+id/txtMoedas"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/btn_escuro"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:text="🪙 0"
-        android:textColor="@color/dourado"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -30,6 +16,37 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.65" />
+
+    
+    <LinearLayout
+        android:id="@+id/layoutMoedas"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_coin_pill"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:elevation="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🪙"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/txtMoedas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="0"
+            android:textColor="@color/branco"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <!-- Área dos botões centrais (Presente + Jogar) -->
     <LinearLayout

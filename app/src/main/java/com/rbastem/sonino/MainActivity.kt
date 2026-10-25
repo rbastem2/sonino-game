@@ -230,7 +230,7 @@ class MainActivity : AppCompatActivity() {
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
         setContentView(R.layout.activity_main)
-        findViewById<TextView>(R.id.txtMoedas).text = "🪙 \$saldoMoedas"
+        findViewById<TextView>(R.id.txtMoedas).text = "🪙 $saldoMoedas"
 
         // 1. Lógica do Bónus Diário
 
@@ -243,10 +243,20 @@ class MainActivity : AppCompatActivity() {
             val tempoDecorrido = agoraMillis - ultimaDataMillis
 
             if (tempoDecorrido in 0 until umDiaEmMillis) {
-                AlertDialog.Builder(this)
-                    .setTitle("Bónus Diário")
-                    .setMessage("Você já resgatou o seu bónus hoje! Volte amanhã.")
-                    .setPositiveButton("OK", null).show()
+                val dialogViewJaResgatado = layoutInflater.inflate(R.layout.activity_daily_reward, null)
+                dialogViewJaResgatado.findViewById<TextView>(R.id.txtDiaBonus).text = "Já Resgatado"
+                dialogViewJaResgatado.findViewById<TextView>(R.id.txtValorBonus).text = "Volte amanhã!"
+                dialogViewJaResgatado.findViewById<Button>(R.id.btnReceberBonus).text = "FECHAR"
+
+                val dialogJaResgatado = AlertDialog.Builder(this)
+                    .setView(dialogViewJaResgatado)
+                    .setCancelable(true)
+                    .create()
+
+                dialogViewJaResgatado.findViewById<Button>(R.id.btnReceberBonus).setOnClickListener {
+                    dialogJaResgatado.dismiss()
+                }
+                dialogJaResgatado.show()
             } else if (tempoDecorrido < 0) {
                 AlertDialog.Builder(this)
                     .setTitle("Erro de Segurança")
@@ -282,7 +292,7 @@ class MainActivity : AppCompatActivity() {
                     prefs.edit().putLong("ultima_data_millis", agoraMillis).putInt("sequencia", sequencia).apply()
                     getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putInt("saldo_moedas", saldoMoedas).apply()
                     
-                    findViewById<TextView>(R.id.txtMoedas).text = "🪙 \$saldoMoedas"
+                    findViewById<TextView>(R.id.txtMoedas).text = "🪙 $saldoMoedas"
                     tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
                     dialog.dismiss()
                 }
