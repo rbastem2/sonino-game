@@ -286,17 +286,24 @@ class MainActivity : AppCompatActivity() {
                 txtDia.text = "Dia ${i + 1}"
                 txtQtd.text = "${premios[i]}"
 
-                if (i + 1 < diaParaMostrar || (jaResgatouHoje && i + 1 == diaParaMostrar)) {
-                    // Dias passados (ou o de hoje já resgatado)
+                if (i + 1 < diaParaMostrar) {
+                    // Dias passados (escuros)
                     itemView.alpha = 0.5f
                     txtQtd.setTextColor(Color.GRAY)
                 } else if (i + 1 == diaParaMostrar) {
-                    // Dia Atual (Destaque Dourado)
-                    card.setBackgroundResource(R.drawable.btn_dourado)
-                    txtDia.setTextColor(Color.BLACK)
-                    txtQtd.setTextColor(Color.BLACK)
+                    if (jaResgatouHoje) {
+                        // O dia que já foi resgatado hoje (mostra um visto e fica escuro)
+                        txtDia.text = "Resgatado"
+                        itemView.alpha = 0.5f
+                        txtQtd.setTextColor(Color.GRAY)
+                    } else {
+                        // O dia atual que ele PODE resgatar (Brilha em Dourado)
+                        card.setBackgroundResource(R.drawable.btn_dourado)
+                        txtDia.setTextColor(Color.BLACK)
+                        txtQtd.setTextColor(Color.BLACK)
+                    }
                 } else {
-                    // Dias Futuros
+                    // Dias Futuros (Cor Dourada normal)
                     txtQtd.setTextColor(Color.parseColor("#D4AF37"))
                 }
                 layoutDias.addView(itemView)
