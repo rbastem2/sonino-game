@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     var jogadorComeca = true // Define quem joga a primeira carta da rodada
     var dificuldade = "Difícil" // Nível da IA
     var somAtivado = true
+    var saldoMoedas = 0
     var vibracaoAtivada = true
 
     // --- FERRAMENTAS DE SISTEMA ---
@@ -126,6 +127,7 @@ class MainActivity : AppCompatActivity() {
         // 5. Carrega a dificuldade que o jogador escolheu por último
         val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
         dificuldade = prefs.getString("dificuldade_salva", "Difícil") ?: "Difícil"
+        saldoMoedas = prefs.getInt("saldo_moedas", 0)
         
         // 6. Abre o Menu Principal
         mostrarMenuPrincipal()
@@ -228,52 +230,66 @@ class MainActivity : AppCompatActivity() {
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
         setContentView(R.layout.activity_main)
+        findViewById<TextView>(R.id.txtMoedas).text = "🪙 \$saldoMoedas"
 
         // 1. Lógica do Bónus Diário
+
         findViewById<TextView>(R.id.btnBonusDiario).setOnClickListener {
             vibrar()
             val prefs = getSharedPreferences("sonino_bonus", Context.MODE_PRIVATE)
             val agoraMillis = System.currentTimeMillis()
             val ultimaDataMillis = prefs.getLong("ultima_data_millis", 0L)
-            
-            val tempoDecorrido = agoraMillis - ultimaDataMillis
             val umDiaEmMillis = 24 * 60 * 60 * 1000L
+            val tempoDecorrido = agoraMillis - ultimaDataMillis
 
             if (tempoDecorrido in 0 until umDiaEmMillis) {
-                // Já recebeu hoje
                 AlertDialog.Builder(this)
                     .setTitle("Bónus Diário")
                     .setMessage("Você já resgatou o seu bónus hoje! Volte amanhã.")
                     .setPositiveButton("OK", null).show()
             } else if (tempoDecorrido < 0) {
-                // Segurança: O jogador tentou mudar a hora do telemóvel
                 AlertDialog.Builder(this)
                     .setTitle("Erro de Segurança")
                     .setMessage("A data do seu telemóvel está incorreta.")
                     .setPositiveButton("OK", null).show()
             } else {
-                // Dá o bónus e calcula o streak (dias seguidos)
                 var sequencia = prefs.getInt("sequencia", 0)
-                if (tempoDecorrido > (2 * umDiaEmMillis)) sequencia = 1 else sequencia++
-                
-                val pontosBonus = sequencia * 50
-                
-                val statsPrefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
-                val totalAtual = statsPrefs.getInt("total_pontos", 0)
-                statsPrefs.edit().putInt("total_pontos", totalAtual + pontosBonus).apply()
-                
-                prefs.edit().putLong("ultima_data_millis", agoraMillis).putInt("sequencia", sequencia).apply()
-                
-                AlertDialog.Builder(this)
-                    .setTitle("Bónus Diário (Dia $sequencia)")
-                    .setMessage("Você ganhou $pontosBonus pontos!")
-                    .setPositiveButton("Receber", null).show()
+                // Se passou mais de 48h, reinicia a sequência para o dia 1
+                if (tempoDecorrido > (2 * umDiaEmMillis) || sequencia >= 7) {
+                    sequencia = 1
+                } else {
+                    sequencia++
+                }
+
+                // Tabela de prémios (Dia 1 a 7)
+                val premios = intArrayOf(50, 100, 150, 200, 300, 400, 500)
+                val valorBonus = premios[sequencia - 1]
+
+                // Abrir o Dialog personalizado
+                val dialogView = layoutInflater.inflate(R.layout.activity_daily_reward, null)
+                dialogView.findViewById<TextView>(R.id.txtDiaBonus).text = "Dia \$sequencia de 7"
+                dialogView.findViewById<TextView>(R.id.txtValorBonus).text = "🪙 +\$valorBonus Moedas"
+
+                val dialog = AlertDialog.Builder(this)
+                    .setView(dialogView)
+                    .setCancelable(false)
+                    .create()
+
+                dialogView.findViewById<Button>(R.id.btnReceberBonus).setOnClickListener {
+                    vibrar()
+                    saldoMoedas += valorBonus
+                    // Guardar o novo saldo e a data
+                    prefs.edit().putLong("ultima_data_millis", agoraMillis).putInt("sequencia", sequencia).apply()
+                    getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putInt("saldo_moedas", saldoMoedas).apply()
                     
-                tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
+                    findViewById<TextView>(R.id.txtMoedas).text = "🪙 \$saldoMoedas"
+                    tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
+                    dialog.dismiss()
+                }
+                dialog.show()
             }
         }
 
-        // 2. Botão Jogar (Verifica se há jogo salvo)
         findViewById<Button>(R.id.btnJogar).setOnClickListener {
             vibrar()
             val savePrefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
