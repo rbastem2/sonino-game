@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.72" />
+        app:layout_constraintGuide_percent="0.65" />
 
     <!-- Área dos botões centrais (Presente + Jogar) -->
     <LinearLayout
@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        app:layout_constraintBottom_toTopOf="@+id/linearBotoesMenu"
+        app:layout_constraintBottom_toTopOf="@+id/btnJogarOnline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/guideline">
@@ -49,13 +49,30 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Botão Jogar Online -->
+    <Button
+        android:id="@+id/btnJogarOnline"
+        android:layout_width="292dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/btn_escuro"
+        android:text="JOGAR ONLINE"
+        android:textColor="@color/dourado"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/linearBotoesMenu"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearBotoesCentrais" />
+
+    <!-- Botões inferiores -->
     <LinearLayout
         android:id="@+id/linearBotoesMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -69,7 +86,8 @@
             android:background="@drawable/btn_escuro"
             android:text="REGRAS"
             android:textColor="@color/dourado"
-            android:textSize="11sp"
+            android:textSize="10sp"
+            android:padding="0dp"
             android:textStyle="bold" />
 
         <Button
@@ -81,7 +99,8 @@
             android:background="@drawable/btn_escuro"
             android:text="NÍVEL"
             android:textColor="@color/dourado"
-            android:textSize="11sp"
+            android:textSize="10sp"
+            android:padding="0dp"
             android:textStyle="bold" />
 
         <Button
@@ -91,9 +110,10 @@
             android:layout_weight="1"
             android:layout_marginStart="4dp"
             android:background="@drawable/btn_escuro"
-            android:text="ESTATÍSTICA"
+            android:text="STATS"
             android:textColor="@color/dourado"
             android:textSize="10sp"
+            android:padding="0dp"
             android:textStyle="bold" />
     </LinearLayout>
 
