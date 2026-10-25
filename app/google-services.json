@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1029027224246",
+    "project_id": "bissaulife",
+    "storage_bucket": "bissaulife.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1029027224246:android:ffe60cb86143ca8160a417",
+        "android_client_info": {
+          "package_name": "com.bissaulife.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADDcRTjZvxqRkq0ZHYhyESqgHyQJbJgL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1029027224246:android:bdb92eec1ecdae1c60a417",
+        "android_client_info": {
+          "package_name": "com.rbastem.sonino"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADDcRTjZvxqRkq0ZHYhyESqgHyQJbJgL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
