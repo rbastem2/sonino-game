@@ -104,7 +104,8 @@ class MainActivity : AppCompatActivity() {
     // Cartas temporárias na mesa (para controle de estado)
     var cartaAndroidJogada: Carta? = null
     var cartaJogadorJogada: Carta? = null
-    private var isJogoAtivo = false // Flag para evitar callbacks se o utilizador sair da tela
+    private var isJogoAtivo = false
+    private var telaAtual = "MENU" // Flag para evitar callbacks se o utilizador sair da tela
 
     /**
      * Ciclo de vida: Chamado quando a aplicação inicia.
@@ -230,6 +231,7 @@ class MainActivity : AppCompatActivity() {
     /** Constrói a tela do Menu Principal e as suas funcionalidades */
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
+        telaAtual = "MENU"
         setContentView(R.layout.activity_main)
         findViewById<TextView>(R.id.txtMoedas).text = "🪙 $saldoMoedas"
 
@@ -411,6 +413,7 @@ class MainActivity : AppCompatActivity() {
 
     fun mostrarTelaMultiplayer() {
         isJogoAtivo = false
+        telaAtual = "MULTIPLAYER"
         setContentView(R.layout.activity_multiplayer)
 
         findViewById<Button>(R.id.btnVoltarMulti).setOnClickListener {
@@ -603,6 +606,7 @@ class MainActivity : AppCompatActivity() {
     /** Mostra a tela de estatísticas com os dados guardados */
     fun mostrarEstatisticas() {
         isJogoAtivo = false
+        telaAtual = "STATS"
         setContentView(R.layout.activity_stats)
 
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
@@ -650,6 +654,7 @@ class MainActivity : AppCompatActivity() {
     /** Inicia uma nova partida limpando todos os estados anteriores */
     fun iniciarNovaPartida() {
         isJogoAtivo = true
+        telaAtual = "JOGO"
         pontosJogador = 0
         pontosAndroid = 0
         jogadorComeca = true
@@ -1140,5 +1145,17 @@ class MainActivity : AppCompatActivity() {
                 txtFeedbackRodada.animate().alpha(0f).setDuration(300).withEndAction { txtFeedbackRodada.visibility = View.GONE }
             }, 1000)
         }.start()
+    }
+
+    override fun onBackPressed() {
+        if (telaAtual == "MENU") {
+            super.onBackPressed() // Fecha o aplicativo normalmente
+        } else {
+            if (isJogoAtivo) {
+                // Se estiver a jogar, guarda o estado antes de sair para o menu
+                salvarEstadoJogo()
+            }
+            mostrarMenuPrincipal() // Volta para o menu
+        }
     }
 }

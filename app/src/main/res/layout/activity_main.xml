@@ -10,13 +10,6 @@
     
     
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.65" />
-
     
     <LinearLayout
         android:id="@+id/layoutMoedas"
@@ -47,6 +40,16 @@
             android:textSize="20sp"
             android:textStyle="bold" />
     </LinearLayout>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.65" />
+
+    
+    
 
     <!-- Área dos botões centrais (Presente + Jogar) -->
     <LinearLayout
