@@ -13,10 +13,8 @@ object FirebaseManager {
 
     fun iniciarSessao(onSucesso: () -> Unit) {
         if (auth.currentUser != null) {
-            Log.d("FirebaseDebug", "Sessão já iniciada: ${auth.currentUser?.uid}")
             onSucesso()
         } else {
-            Log.d("FirebaseDebug", "A iniciar sessão anónima...")
             auth.signInAnonymously().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d("FirebaseDebug", "Login anónimo OK: ${auth.currentUser?.uid}")
@@ -33,7 +31,6 @@ object FirebaseManager {
     fun criarSala(onSalaCriada: (String) -> Unit, onErro: (String) -> Unit) {
         val meuId = getMeuId() ?: return onErro("Utilizador não autenticado")
         val codigoGerado = String.format("%04d", Random.nextInt(10000))
-        Log.d("FirebaseDebug", "A criar sala com código: $codigoGerado")
 
         val novaSala = Sala(
             codigo = codigoGerado,
@@ -43,52 +40,48 @@ object FirebaseManager {
         )
 
         db.collection("salas").document(codigoGerado).set(novaSala)
-            .addOnSuccessListener { 
-                Log.d("FirebaseDebug", "Sala criada com sucesso: $codigoGerado")
-                onSalaCriada(codigoGerado) 
-            }
-            .addOnFailureListener { 
-                Log.e("FirebaseDebug", "Erro ao criar sala", it)
-                onErro(it.message ?: "Erro ao criar sala") 
-            }
+            .addOnSuccessListener { onSalaCriada(codigoGerado) }
+            .addOnFailureListener { onErro(it.message ?: "Erro ao criar sala") }
     }
 
     fun entrarSala(codigo: String, onSalaEntrada: (Sala) -> Unit, onErro: (String) -> Unit) {
         val meuId = getMeuId() ?: return onErro("Utilizador não autenticado")
-        Log.d("FirebaseDebug", "A tentar entrar na sala: $codigo. Meu ID: $meuId")
-        
         val salaRef = db.collection("salas").document(codigo)
 
-        db.runTransaction { transaction ->
-            Log.d("FirebaseDebug", "A iniciar transação para sala $codigo")
-            val snapshot = transaction.get(salaRef)
-            
+        // Primeiro, verificamos se a sala existe e está livre (get simples, mais rápido que transaction)
+        salaRef.get().addOnSuccessListener { snapshot ->
             if (!snapshot.exists()) {
-                Log.e("FirebaseDebug", "Transação: Sala não encontrada!")
-                throw Exception("Sala não encontrada")
+                onErro("Sala não encontrada")
+                return@addOnSuccessListener
             }
-            
-            val sala = snapshot.toObject(Sala::class.java)!!
-            Log.d("FirebaseDebug", "Transação: Sala encontrada. Status: ${sala.status}, Host: ${sala.hostId}")
+
+            val sala = snapshot.toObject(Sala::class.java)
+            if (sala == null) {
+                onErro("Erro ao ler dados da sala")
+                return@addOnSuccessListener
+            }
 
             if (sala.status != "ESPERANDO") {
-                Log.e("FirebaseDebug", "Transação: Sala não está ESPERANDO (status: ${sala.status})")
-                throw Exception("A sala já está cheia ou o jogo já começou")
+                onErro("A sala já está cheia ou o jogo já começou")
+                return@addOnSuccessListener
             }
+            
             if (sala.hostId == meuId) {
-                Log.e("FirebaseDebug", "Transação: Tentativa de entrar na própria sala")
-                throw Exception("Não pode entrar na sua própria sala")
+                onErro("Não pode entrar na sua própria sala")
+                return@addOnSuccessListener
             }
 
-            Log.d("FirebaseDebug", "Transação: A atualizar sala com guestId: $meuId")
-            transaction.update(salaRef, "guestId", meuId, "status", "JOGANDO")
-            sala.copy(guestId = meuId, status = "JOGANDO")
-        }.addOnSuccessListener { salaAtualizada ->
-            Log.d("FirebaseDebug", "Transação CONCLUÍDA com sucesso: $salaAtualizada")
-            onSalaEntrada(salaAtualizada)
+            // Se passou nas verificações, atualizamos a sala
+            salaRef.update("guestId", meuId, "status", "JOGANDO")
+                .addOnSuccessListener {
+                    Log.d("FirebaseDebug", "Entrou na sala com sucesso!")
+                    onSalaEntrada(sala.copy(guestId = meuId, status = "JOGANDO"))
+                }
+                .addOnFailureListener {
+                    onErro("Falha ao atualizar a sala: ${it.message}")
+                }
         }.addOnFailureListener {
-            Log.e("FirebaseDebug", "Transação FALHOU", it)
-            onErro(it.message ?: "Erro ao entrar na sala")
+            onErro("Falha na rede: ${it.message}")
         }
     }
 
@@ -97,15 +90,12 @@ object FirebaseManager {
         listenerRegistration = db.collection("salas").document(codigo)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    Log.e("FirebaseDebug", "Erro no listener da sala", e)
+                    Log.e("FirebaseDebug", "Erro no listener", e)
                     return@addSnapshotListener
                 }
                 if (snapshot != null && snapshot.exists()) {
                     val sala = snapshot.toObject(Sala::class.java)
-                    if (sala != null) {
-                        Log.d("FirebaseDebug", "Listener atualizou sala. Status: ${sala.status}")
-                        onAtualizacao(sala)
-                    }
+                    if (sala != null) onAtualizacao(sala)
                 }
             }
     }
