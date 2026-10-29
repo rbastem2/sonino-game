@@ -528,8 +528,8 @@ class MainActivity : AppCompatActivity() {
         val mesaEu = if (souHostLocal) sala.mesaHost else sala.mesaGuest
 
         // Placar
-        findViewById<TextView>(R.id.txtMinhaPontuacaoOnline).text = "${if (souHostLocal) sala.pontosHost else sala.pontosGuest} pts"
-        findViewById<TextView>(R.id.txtPontuacaoOponenteOnline).text = "${if (souHostLocal) sala.pontosGuest else sala.pontosHost} pts"
+        findViewById<TextView>(R.id.txtMinhaPontuacaoOnline).text = (if (souHostLocal) sala.pontosHost else sala.pontosGuest).toString() + " pts"
+        findViewById<TextView>(R.id.txtPontuacaoOponenteOnline).text = (if (souHostLocal) sala.pontosGuest else sala.pontosHost).toString() + " pts"
 
         // Cartas do oponente
         val opCards = listOf(R.id.cartaOp1, R.id.cartaOp2, R.id.cartaOp3)
@@ -556,7 +556,7 @@ class MainActivity : AppCompatActivity() {
         } else imgMesaEu.visibility = android.view.View.GONE
 
         if (sala.trunfo.isNotEmpty()) {
-            val cartaTrunfo = Carta("A", sala.trunfo) // Simbolo visual do trunfo
+            val cartaTrunfo = Carta("A", sala.trunfo)
             imgTrunfo.setImageResource(getImagemCarta(cartaTrunfo))
             imgTrunfo.visibility = android.view.View.VISIBLE
         }
@@ -570,17 +570,17 @@ class MainActivity : AppCompatActivity() {
                 img.visibility = android.view.View.VISIBLE
                 if (sala.turno == meuId && sala.status == "JOGANDO") {
                     img.setOnClickListener { jogarCartaOnline(i) }
-                    img.alpha = 1.0f // Iluminada
+                    img.alpha = 1.0f
                 } else {
                     img.setOnClickListener(null)
-                    img.alpha = 0.6f // Escurecida
+                    img.alpha = 0.6f
                 }
             } else {
                 img.visibility = android.view.View.GONE
             }
         }
 
-        // Texto de Vez
+        // Texto de Vez e Fim de Jogo
         val txtVez = findViewById<TextView>(R.id.txtVez)
         if (sala.status == "FINALIZADO") {
             txtVez.text = "Fim de Jogo"
@@ -588,13 +588,18 @@ class MainActivity : AppCompatActivity() {
             if (!isDialogShowing) {
                 isDialogShowing = true
                 val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCÊ VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCÊ PERDEU!" else "EMPATE!"
+                
                 AlertDialog.Builder(this)
                     .setTitle("Fim do Jogo Online")
-                    .setMessage("Pontos: ${sala.pontosHost} vs ${sala.pontosGuest}
+                    .setMessage("Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + "
 
-$vencedor")
-                    .setPositiveButton("Sair") { _, _ -> FirebaseManager.pararDeEscutar(); mostrarMenuPrincipal() }
-                    .setCancelable(false).show()
+" + vencedor)
+                    .setPositiveButton("Sair") { _, _ ->
+                        FirebaseManager.pararDeEscutar()
+                        mostrarMenuPrincipal()
+                    }
+                    .setCancelable(false)
+                    .show()
             }
         } else if (sala.turno == meuId) {
             txtVez.text = "A sua vez!"
@@ -604,10 +609,16 @@ $vencedor")
             txtVez.setTextColor(android.graphics.Color.RED)
         }
         
-        // Animação de descarte se a mesa ficou vazia
+        // Animação de descarte
         if (mesaEu == null && mesaOponente == null && sala.baralho.isNotEmpty()) {
-             imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction { imgMesaEu.alpha = 1f; imgMesaEu.visibility = android.view.View.GONE }
-             imgMesaOp.animate().alpha(0f).setDuration(300).withEndAction { imgMesaOp.alpha = 1f; imgMesaOp.visibility = android.view.View.GONE }
+             imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction {
+                 imgMesaEu.alpha = 1f
+                 imgMesaEu.visibility = android.view.View.GONE
+             }
+             imgMesaOp.animate().alpha(0f).setDuration(300).withEndAction {
+                 imgMesaOp.alpha = 1f
+                 imgMesaOp.visibility = android.view.View.GONE
+             }
         }
     }
 
