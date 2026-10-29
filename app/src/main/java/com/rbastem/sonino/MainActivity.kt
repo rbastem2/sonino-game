@@ -6,14 +6,15 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -23,10 +24,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.doOnLayout
-
-import android.widget.EditText
-import com.google.firebase.auth.FirebaseAuth
-
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -36,55 +33,40 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import java.util.Locale
 
-/**
- * Classe de dados que representa uma carta do baralho.
- * Exemplo: valor="A", naipe="♠"
- */
 data class Carta(val valor: String, val naipe: String) {
     override fun toString(): String { return "$valor $naipe" }
 }
 
-/**
- * Activity principal do SONINO.
- * Gere o ciclo de vida do jogo, interface, regras e inteligência artificial.
- */
 class MainActivity : AppCompatActivity() {
-    
-    // --- CONSTANTES DO JOGO ---
     val naipes = listOf("♠", "♥", "♦", "♣")
     val valores = listOf("A", "7", "K", "J", "Q", "6", "5", "4", "3", "2")
-    // Mapeamento de pontos oficiais da Bisca (Ás=11, Sete=10, etc.)
     val pontosCartas = mapOf("A" to 11, "7" to 10, "K" to 4, "J" to 3, "Q" to 2)
     
-    // --- ESTADO ATUAL DO JOGO ---
     var baralho = mutableListOf<Carta>()
     var maoJogador = mutableListOf<Carta>()
     var maoAndroid = mutableListOf<Carta>()
     var trunfo = ""
     var cartaTrunfo: Carta? = null
-    var cartasJaJogadas = mutableListOf<Carta>() // Memória usada pela IA Mestre
+    var cartasJaJogadas = mutableListOf<Carta>()
     
-    // Placar da Partida Atual
     var pontosJogador = 0
     var pontosAndroid = 0
-    
-    // Placar do Torneio (Melhor de 3)
     var partidasJogador = 0
     var partidasAndroid = 0
     
-    var jogadorComeca = true // Define quem joga a primeira carta da rodada
-    var dificuldade = "Difícil" // Nível da IA
+    var jogadorComeca = true
+    var dificuldade = "Difícil"
     var somAtivado = true
-    var saldoMoedas = 0
     var vibracaoAtivada = true
+    var saldoMoedas = 0
 
-    // --- FERRAMENTAS DE SISTEMA ---
-    private var toneG: ToneGenerator? = null // Gerador de som nativo
-    private var mInterstitialAd: InterstitialAd? = null // Anúncio do AdMob
-    // QA FIX: Handler centralizado para evitar Memory Leaks ao fechar o app
-    private val mainHandler = Handler(Looper.getMainLooper()) 
+    private var toneG: ToneGenerator? = null
+    private var mInterstitialAd: InterstitialAd? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var telaAtual = "MENU"
+    private var salaAtual: Sala? = null
+    private var isDialogShowing = false
 
-    // --- REFERÊNCIAS DA INTERFACE (VIEWS) ---
     lateinit var uiCartasJogador: List<TextView>
     lateinit var uiImgsJogador: List<ImageView>
     lateinit var uiImgsAndroid: List<ImageView>
@@ -102,74 +84,57 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnSom: Button
     lateinit var btnVibracao: Button
     
-    // Cartas temporárias na mesa (para controle de estado)
     var cartaAndroidJogada: Carta? = null
     var cartaJogadorJogada: Carta? = null
     private var isJogoAtivo = false
-    private var telaAtual = "MENU"
-    private var salaAtual: Sala? = null
-    private var souHost = false
-    private var isDialogShowing = false // Flag para evitar callbacks se o utilizador sair da tela
 
-    /**
-     * Ciclo de vida: Chamado quando a aplicação inicia.
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 1. Mostra o Splash Screen (Tela de abertura)
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        
-        // 2. Edge-to-Edge (Desenha por trás da barra de status do telemóvel)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        
-        // 3. Inicializa o áudio do sistema
         toneG = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         
-        // 4. Inicializa os Anúncios (AdMob)
         MobileAds.initialize(this) {}
-        FirebaseManager.iniciarSessao(onPronto = { }, onErro = { Log.e("Firebase", it) })
         carregarAnuncio()
         
-        // 5. Carrega a dificuldade que o jogador escolheu por último
         val prefs = getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE)
         dificuldade = prefs.getString("dificuldade_salva", "Difícil") ?: "Difícil"
         saldoMoedas = prefs.getInt("saldo_moedas", 0)
+        somAtivado = prefs.getBoolean("som_ativo", true)
+        vibracaoAtivada = prefs.getBoolean("vibracao_ativa", true)
         
-        // 6. Abre o Menu Principal
         mostrarMenuPrincipal()
     }
 
-    /**
-     * Ciclo de vida: Chamado quando o utilizador sai do app ou muda de tela.
-     */
     override fun onStop() {
         super.onStop()
-        // Auto-Save: Se sair no meio do jogo, guarda o estado automaticamente
         if (isJogoAtivo) salvarEstadoJogo()
     }
 
-    /**
-     * Ciclo de vida: Chamado quando a tela vai ser destruída.
-     */
     override fun onDestroy() {
         isJogoAtivo = false
-        // QA FIX: Cancela todos os eventos atrasados pendentes para não crashar o app
-        mainHandler.removeCallbacksAndMessages(null) 
+        mainHandler.removeCallbacksAndMessages(null)
+        FirebaseManager.pararDeEscutar()
         toneG?.release()
         super.onDestroy()
     }
 
-    // =================================================================================
-    // MÉTODOS DE FEEDBACK (SOM E VIBRAÇÃO)
-    // =================================================================================
+    override fun onBackPressed() {
+        if (telaAtual == "MENU") {
+            super.onBackPressed()
+        } else {
+            if (isJogoAtivo) salvarEstadoJogo()
+            FirebaseManager.pararDeEscutar()
+            mostrarMenuPrincipal()
+        }
+    }
 
-    /** Toca um som do sistema se o som estiver ativado */
+    // --- SONS E VIBRAÇÃO ---
     fun tocarSom(tipo: Int, duracao: Int) {
         if (somAtivado) toneG?.startTone(tipo, duracao)
     }
 
-    /** Faz o telemóvel vibrar (Compatível com todas as versões do Android) */
-    fun vibrar(duracao: Long = 50) {
+    fun vibrar(duracao: Long = 100) {
         if (!vibracaoAtivada) return
         try {
             val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -181,23 +146,16 @@ class MainActivity : AppCompatActivity() {
             }
             if (vibrator.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // Amplitude 255 força a vibração máxima ignorando configurações do sistema
                     vibrator.vibrate(VibrationEffect.createOneShot(duracao, 120))
                 } else {
                     @Suppress("DEPRECATION")
                     vibrator.vibrate(duracao)
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // =================================================================================
-    // MÉTODOS DO ADMOB (MONETIZAÇÃO)
-    // =================================================================================
-
-    /** Prepara um anúncio de tela cheia nos bastidores */
+    // --- ANÚNCIOS ---
     fun carregarAnuncio() {
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(this, "ca-app-pub-6316829094801811/4524927652", adRequest,
@@ -207,13 +165,12 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
-    /** Mostra o anúncio. Se falhar (ex: sem internet), continua o jogo na hora */
     fun mostrarAnuncio(aoFechar: () -> Unit) {
         if (mInterstitialAd != null) {
             mInterstitialAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     mInterstitialAd = null
-                    carregarAnuncio() // Prepara o próximo
+                    carregarAnuncio()
                     aoFechar()
                 }
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
@@ -224,23 +181,18 @@ class MainActivity : AppCompatActivity() {
             }
             mInterstitialAd?.show(this)
         } else {
-            aoFechar() // Se não tiver anúncio pronto, não bloqueia o jogador
+            aoFechar()
         }
     }
 
-    // =================================================================================
-    // TELAS E NAVEGAÇÃO
-    // =================================================================================
-
-    /** Constrói a tela do Menu Principal e as suas funcionalidades */
+    // --- MENU PRINCIPAL ---
     fun mostrarMenuPrincipal() {
         isJogoAtivo = false
         telaAtual = "MENU"
         setContentView(R.layout.activity_main)
-        findViewById<TextView>(R.id.txtMoedas).text = "🪙 $saldoMoedas"
+        FirebaseManager.pararDeEscutar()
 
-        // 1. Lógica do Bónus Diário
-
+        findViewById<TextView>(R.id.txtMoedas).text = saldoMoedas.toString()
 
         findViewById<TextView>(R.id.btnBonusDiario).setOnClickListener {
             vibrar()
@@ -254,12 +206,10 @@ class MainActivity : AppCompatActivity() {
             val jaResgatouHoje = tempoDecorrido in 0 until umDiaEmMillis
             val tentouTrapaca = tempoDecorrido < 0
             
-            // Se passou mais de 48h ou completou os 7 dias, a sequência reinicia
             if (!jaResgatouHoje && (tempoDecorrido > (2 * umDiaEmMillis) || sequenciaAtual >= 7)) {
                 sequenciaAtual = 0
             }
             
-            // Se ele ainda não resgatou hoje, o dia "ativo" para mostrar é a sequência + 1
             val diaParaMostrar = if (jaResgatouHoje) sequenciaAtual else sequenciaAtual + 1
 
             val dialogView = layoutInflater.inflate(R.layout.activity_daily_reward, null)
@@ -282,7 +232,6 @@ class MainActivity : AppCompatActivity() {
 
             val premios = intArrayOf(50, 100, 150, 200, 300, 400, 500)
             
-            // Criar os 7 cartões
             for (i in 0 until 7) {
                 val itemView = layoutInflater.inflate(R.layout.item_daily_reward, layoutDias, false)
                 val txtDia = itemView.findViewById<TextView>(R.id.txtDiaSemana)
@@ -290,26 +239,22 @@ class MainActivity : AppCompatActivity() {
                 val card = itemView.findViewById<LinearLayout>(R.id.cardDia)
 
                 txtDia.text = "Dia ${i + 1}"
-                txtQtd.text = "${premios[i]}"
+                txtQtd.text = premios[i].toString()
 
                 if (i + 1 < diaParaMostrar) {
-                    // Dias passados (escuros)
                     itemView.alpha = 0.5f
                     txtQtd.setTextColor(Color.GRAY)
                 } else if (i + 1 == diaParaMostrar) {
                     if (jaResgatouHoje) {
-                        // O dia que já foi resgatado hoje (mostra um visto e fica escuro)
                         txtDia.text = "Resgatado"
                         itemView.alpha = 0.5f
                         txtQtd.setTextColor(Color.GRAY)
                     } else {
-                        // O dia atual que ele PODE resgatar (Brilha em Dourado)
                         card.setBackgroundResource(R.drawable.btn_dourado)
                         txtDia.setTextColor(Color.BLACK)
                         txtQtd.setTextColor(Color.BLACK)
                     }
                 } else {
-                    // Dias Futuros (Cor Dourada normal)
                     txtQtd.setTextColor(Color.parseColor("#D4AF37"))
                 }
                 layoutDias.addView(itemView)
@@ -327,8 +272,7 @@ class MainActivity : AppCompatActivity() {
                     saldoMoedas += valorBonus
                     prefs.edit().putLong("ultima_data_millis", agoraMillis).putInt("sequencia", sequenciaAtual + 1).apply()
                     getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putInt("saldo_moedas", saldoMoedas).apply()
-                    
-                    findViewById<TextView>(R.id.txtMoedas).text = "$saldoMoedas"
+                    findViewById<TextView>(R.id.txtMoedas).text = saldoMoedas.toString()
                     tocarSom(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 1000)
                 }
                 dialog.dismiss()
@@ -342,9 +286,8 @@ class MainActivity : AppCompatActivity() {
             if (savePrefs.getBoolean("tem_jogo_salvo", false)) {
                 AlertDialog.Builder(this)
                     .setTitle("Jogo em Andamento")
-                    .setMessage("Existe uma partida não terminada. Deseja continuar ou iniciar um novo jogo?")
+                    .setMessage("Deseja continuar ou iniciar um novo jogo?")
                     .setPositiveButton("Continuar") { _, _ ->
-                        // Restaura o jogo
                         carregarEstadoJogo()
                         setContentView(R.layout.activity_game)
                         configurarElementosTela()
@@ -364,7 +307,6 @@ class MainActivity : AppCompatActivity() {
                         configurarBotoesDeJogo()
                     }
                     .setNegativeButton("Novo Jogo") { _, _ ->
-                        // Abandona o jogo antigo e conta como derrota
                         registrarDerrotaAbandono()
                         savePrefs.edit().clear().apply()
                         partidasJogador = 0
@@ -380,15 +322,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 3. Botão Regras
+        findViewById<Button>(R.id.btnJogarOnline).setOnClickListener {
+            vibrar()
+            mostrarTelaMultiplayer()
+        }
+
         findViewById<Button>(R.id.btnRegras).setOnClickListener {
             vibrar()
             AlertDialog.Builder(this).setTitle("Regras do SONINO")
-                .setMessage("• Baralho de 40 cartas.\n• Trunfo: última carta do baralho.\n• Ganha a rodada o trunfo mais forte ou a carta mais forte do naipe inicial.\n• Quem ganha, joga primeiro.\n• Vence quem fizer 61 pontos.\n• Torneio: melhor de 5 (o primeiro a vencer 3 partidas ganha).")
+                .setMessage("• Baralho de 40 cartas.\n• Trunfo: última carta do baralho.\n• Ganha a rodada o trunfo mais forte ou a carta mais forte do naipe inicial.\n• Quem ganha, joga primeiro.\n• Vence quem fizer 61 pontos.\n• Torneio: melhor de 3.")
                 .setPositiveButton("Entendi", null).show()
         }
 
-        // 4. Botão Nível (Configura a dificuldade da IA)
         findViewById<Button>(R.id.btnConfig).setOnClickListener {
             vibrar()
             val opcoes = arrayOf("Fácil", "Difícil", "Mestre")
@@ -400,21 +345,13 @@ class MainActivity : AppCompatActivity() {
             }.show()
         }
 
-        // 5. Botão Estatísticas
-        
-        findViewById<Button>(R.id.btnJogarOnline).setOnClickListener {
-            vibrar()
-            mostrarTelaMultiplayer()
-        }
-
         findViewById<Button>(R.id.btnHistorico).setOnClickListener {
             vibrar()
             mostrarEstatisticas()
         }
     }
 
-    /** Configura a navegação e os botões dentro do tabuleiro de jogo */
-
+    // --- MULTIPLAYER LOBBY ---
     fun mostrarTelaMultiplayer() {
         isJogoAtivo = false
         telaAtual = "MULTIPLAYER"
@@ -424,7 +361,6 @@ class MainActivity : AppCompatActivity() {
         val btnEntrar = findViewById<Button>(R.id.btnEntrarSala)
         val txtStatus = findViewById<TextView>(R.id.txtStatusSala)
 
-        // Desativa os botões enquanto autentica
         btnCriar.isEnabled = false
         btnEntrar.isEnabled = false
         txtStatus.text = "A ligar ao servidor..."
@@ -438,7 +374,7 @@ class MainActivity : AppCompatActivity() {
                 }
             },
             onErro = { erro ->
-                runOnUiThread { txtStatus.text = "Erro: \$erro" }
+                runOnUiThread { txtStatus.text = "Erro: $erro" }
             }
         )
 
@@ -449,55 +385,54 @@ class MainActivity : AppCompatActivity() {
 
         btnCriar.setOnClickListener {
             vibrar()
-            findViewById<TextView>(R.id.txtStatusSala).text = "A criar sala..."
+            txtStatus.text = "A criar sala..."
             FirebaseManager.criarSala(
                 onSalaCriada = { codigo ->
-                    findViewById<TextView>(R.id.txtCodigoSala).text = "Código: $codigo"
-                    findViewById<TextView>(R.id.txtStatusSala).text = "Aguardando oponente..."
-                    
-                    // Ouve quando o convidado entrar na sala
-                    FirebaseManager.escutarSala(codigo) { sala ->
-                        if (sala.status == "JOGANDO") {
-                            // O oponente entrou! Inicia o jogo multiplayer
-                            FirebaseManager.pararDeEscutar()
-                            iniciarJogoOnline(sala)
+                    runOnUiThread {
+                        findViewById<TextView>(R.id.txtCodigoSala).text = "Código: $codigo"
+                        txtStatus.text = "Aguardando oponente..."
+                        FirebaseManager.escutarSala(codigo) { sala ->
+                            if (sala.status == "JOGANDO") {
+                                FirebaseManager.pararDeEscutar()
+                                runOnUiThread { iniciarJogoOnline(sala) }
+                            }
                         }
                     }
                 },
-                onErro = { erro ->
-                    findViewById<TextView>(R.id.txtStatusSala).text = "Erro: $erro"
-                }
+                onErro = { erro -> runOnUiThread { txtStatus.text = "Erro: $erro" } }
             )
         }
 
-        findViewById<Button>(R.id.btnEntrarSala).setOnClickListener {
+        btnEntrar.setOnClickListener {
             vibrar()
             val codigo = findViewById<EditText>(R.id.edtCodigoEntrar).text.toString()
             if (codigo.length == 4) {
-                findViewById<TextView>(R.id.txtStatusSala).text = "A entrar na sala $codigo..."
+                txtStatus.text = "A entrar na sala $codigo..."
                 FirebaseManager.entrarSala(
                     codigo = codigo,
-                    onSalaEntrada = { sala ->
-                        iniciarJogoOnline(sala)
-                    },
-                    onErro = { erro ->
-                        findViewById<TextView>(R.id.txtStatusSala).text = "Erro: $erro"
-                    }
+                    onSalaEntrada = { sala -> runOnUiThread { iniciarJogoOnline(sala) } },
+                    onErro = { erro -> runOnUiThread { txtStatus.text = "Erro: $erro" } }
                 )
             } else {
-                findViewById<TextView>(R.id.txtStatusSala).text = "Digite um código de 4 dígitos."
+                txtStatus.text = "Digite um código de 4 dígitos."
             }
         }
     }
 
     fun iniciarJogoOnline(salaInicial: com.rbastem.sonino.Sala) {
         salaAtual = salaInicial
-        souHost = salaInicial.hostId == FirebaseManager.getMeuId()
+        isDialogShowing = false
         telaAtual = "ONLINE_GAME"
-        
         setContentView(R.layout.activity_online_game)
         
-        // Se eu sou o Host, eu gero as cartas e envio para o Firebase
+        val btnMenu = findViewById<Button>(R.id.btnMenuOnline)
+        btnMenu.setOnClickListener {
+            FirebaseManager.pararDeEscutar()
+            mostrarMenuPrincipal()
+        }
+
+        val souHost = salaInicial.hostId == FirebaseManager.getMeuId()
+        
         if (souHost) {
             FirebaseManager.iniciarPartida(salaInicial) { novaSala ->
                 salaAtual = novaSala
@@ -507,16 +442,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else {
-            // Se eu sou o Guest, apenas ouço as alterações
             FirebaseManager.escutarSala(salaInicial.id) { salaAtualizada ->
                 salaAtual = salaAtualizada
                 runOnUiThread { atualizarTelaOnline(salaAtualizada) }
             }
-        }
-
-        findViewById<Button>(R.id.btnMenuOnline).setOnClickListener {
-            FirebaseManager.pararDeEscutar()
-            mostrarMenuPrincipal()
         }
     }
 
@@ -533,7 +462,7 @@ class MainActivity : AppCompatActivity() {
         val opCards = listOf(R.id.cartaOp1, R.id.cartaOp2, R.id.cartaOp3)
         val maoOponenteTamanho = if (souHostLocal) sala.maoGuest.size else sala.maoHost.size
         for (i in 0 until 3) {
-            findViewById<ImageView>(opCards[i]).visibility = if (i < maoOponenteTamanho) android.view.View.VISIBLE else android.view.View.GONE
+            findViewById<ImageView>(opCards[i]).visibility = if (i < maoOponenteTamanho) View.VISIBLE else View.GONE
         }
 
         val imgMesaOp = findViewById<ImageView>(R.id.imgMesaOp)
@@ -541,21 +470,18 @@ class MainActivity : AppCompatActivity() {
         val imgTrunfo = findViewById<ImageView>(R.id.imgTrunfoOnline)
         
         if (mesaOponente != null) {
-            val c = Carta(mesaOponente.valor, mesaOponente.naipe)
-            imgMesaOp.setImageResource(getImagemCarta(c))
-            imgMesaOp.visibility = android.view.View.VISIBLE
-        } else imgMesaOp.visibility = android.view.View.GONE
+            imgMesaOp.setImageResource(getImagemCarta(Carta(mesaOponente.valor, mesaOponente.naipe)))
+            imgMesaOp.visibility = View.VISIBLE
+        } else imgMesaOp.visibility = View.GONE
 
         if (mesaEu != null) {
-            val c = Carta(mesaEu.valor, mesaEu.naipe)
-            imgMesaEu.setImageResource(getImagemCarta(c))
-            imgMesaEu.visibility = android.view.View.VISIBLE
-        } else imgMesaEu.visibility = android.view.View.GONE
+            imgMesaEu.setImageResource(getImagemCarta(Carta(mesaEu.valor, mesaEu.naipe)))
+            imgMesaEu.visibility = View.VISIBLE
+        } else imgMesaEu.visibility = View.GONE
 
         if (sala.trunfo.isNotEmpty()) {
-            val cartaTrunfo = Carta("A", sala.trunfo)
-            imgTrunfo.setImageResource(getImagemCarta(cartaTrunfo))
-            imgTrunfo.visibility = android.view.View.VISIBLE
+            imgTrunfo.setImageResource(getImagemCarta(Carta("A", sala.trunfo)))
+            imgTrunfo.visibility = View.VISIBLE
         }
 
         val myCardsUI = listOf(R.id.myCard1, R.id.myCard2, R.id.myCard3)
@@ -563,7 +489,7 @@ class MainActivity : AppCompatActivity() {
             val img = findViewById<ImageView>(myCardsUI[i])
             if (i < minhaMao.size) {
                 img.setImageResource(getImagemCarta(Carta(minhaMao[i].valor, minhaMao[i].naipe)))
-                img.visibility = android.view.View.VISIBLE
+                img.visibility = View.VISIBLE
                 if (sala.turno == meuId && sala.status == "JOGANDO") {
                     img.setOnClickListener { jogarCartaOnline(i) }
                     img.alpha = 1.0f
@@ -571,15 +497,13 @@ class MainActivity : AppCompatActivity() {
                     img.setOnClickListener(null)
                     img.alpha = 0.6f
                 }
-            } else {
-                img.visibility = android.view.View.GONE
-            }
+            } else img.visibility = View.GONE
         }
 
         val txtVez = findViewById<TextView>(R.id.txtVez)
         if (sala.status == "FINALIZADO") {
             txtVez.text = "Fim de Jogo"
-            txtVez.setTextColor(android.graphics.Color.WHITE)
+            txtVez.setTextColor(Color.WHITE)
             if (!isDialogShowing) {
                 isDialogShowing = true
                 val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCE VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCE PERDEU!" else "EMPATE!"
@@ -591,107 +515,14 @@ class MainActivity : AppCompatActivity() {
                     .setPositiveButton("Sair") { _, _ ->
                         FirebaseManager.pararDeEscutar()
                         mostrarMenuPrincipal()
-                    }
-                    .setCancelable(false)
-                    .show()
+                    }.setCancelable(false).show()
             }
         } else if (sala.turno == meuId) {
             txtVez.text = "A sua vez!"
-            txtVez.setTextColor(android.graphics.Color.GREEN)
+            txtVez.setTextColor(Color.GREEN)
         } else {
             txtVez.text = "Vez do oponente..."
-            txtVez.setTextColor(android.graphics.Color.RED)
-        }
-        
-        if (mesaEu == null && mesaOponente == null && sala.baralho.isNotEmpty()) {
-             imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction {
-                 imgMesaEu.alpha = 1f
-                 imgMesaEu.visibility = android.view.View.GONE
-             }
-             imgMesaOp.animate().alpha(0f).setDuration(300).withEndAction {
-                 imgMesaOp.alpha = 1f
-                 imgMesaOp.visibility = android.view.View.GONE
-             }
-        }
-    }
-        val imgMesaOp = findViewById<ImageView>(R.id.imgMesaOp)
-        val imgMesaEu = findViewById<ImageView>(R.id.imgMesaEu)
-        val imgTrunfo = findViewById<ImageView>(R.id.imgTrunfoOnline)
-        
-        if (mesaOponente != null) {
-            val c = Carta(mesaOponente.valor, mesaOponente.naipe)
-            imgMesaOp.setImageResource(getImagemCarta(c))
-            imgMesaOp.visibility = android.view.View.VISIBLE
-        } else imgMesaOp.visibility = android.view.View.GONE
-
-        if (mesaEu != null) {
-            val c = Carta(mesaEu.valor, mesaEu.naipe)
-            imgMesaEu.setImageResource(getImagemCarta(c))
-            imgMesaEu.visibility = android.view.View.VISIBLE
-        } else imgMesaEu.visibility = android.view.View.GONE
-
-        if (sala.trunfo.isNotEmpty()) {
-            val cartaTrunfo = Carta("A", sala.trunfo)
-            imgTrunfo.setImageResource(getImagemCarta(cartaTrunfo))
-            imgTrunfo.visibility = android.view.View.VISIBLE
-        }
-
-        val myCardsUI = listOf(R.id.myCard1, R.id.myCard2, R.id.myCard3)
-        for (i in 0 until 3) {
-            val img = findViewById<ImageView>(myCardsUI[i])
-            if (i < minhaMao.size) {
-                img.setImageResource(getImagemCarta(Carta(minhaMao[i].valor, minhaMao[i].naipe)))
-                img.visibility = android.view.View.VISIBLE
-                if (sala.turno == meuId && sala.status == "JOGANDO") {
-                    img.setOnClickListener { jogarCartaOnline(i) }
-                    img.alpha = 1.0f
-                } else {
-                    img.setOnClickListener(null)
-                    img.alpha = 0.6f
-                }
-            } else {
-                img.visibility = android.view.View.GONE
-            }
-        }
-
-        val txtVez = findViewById<TextView>(R.id.txtVez)
-        if (sala.status == "FINALIZADO") {
-            txtVez.text = "Fim de Jogo"
-            txtVez.setTextColor(android.graphics.Color.WHITE)
-            if (!isDialogShowing) {
-                isDialogShowing = true
-                val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCÊ VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCÊ PERDEU!" else "EMPATE!"
-                val msgFinal = "Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + "
-
-" + vencedor
-                
-                AlertDialog.Builder(this)
-                    .setTitle("Fim do Jogo Online")
-                    .setMessage(msgFinal)
-                    .setPositiveButton("Sair") { _, _ ->
-                        FirebaseManager.pararDeEscutar()
-                        mostrarMenuPrincipal()
-                    }
-                    .setCancelable(false)
-                    .show()
-            }
-        } else if (sala.turno == meuId) {
-            txtVez.text = "A sua vez!"
-            txtVez.setTextColor(android.graphics.Color.GREEN)
-        } else {
-            txtVez.text = "Vez do oponente..."
-            txtVez.setTextColor(android.graphics.Color.RED)
-        }
-        
-        if (mesaEu == null && mesaOponente == null && sala.baralho.isNotEmpty()) {
-             imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction {
-                 imgMesaEu.alpha = 1f
-                 imgMesaEu.visibility = android.view.View.GONE
-             }
-             imgMesaOp.animate().alpha(0f).setDuration(300).withEndAction {
-                 imgMesaOp.alpha = 1f
-                 imgMesaOp.visibility = android.view.View.GONE
-             }
+            txtVez.setTextColor(Color.RED)
         }
     }
 
@@ -709,11 +540,8 @@ class MainActivity : AppCompatActivity() {
         val cartaJogada = minhaMao.removeAt(index)
 
         var s = sala
-        if (souHostLocal) {
-            s = s.copy(maoHost = minhaMao, mesaHost = cartaJogada, turno = sala.guestId)
-        } else {
-            s = s.copy(maoGuest = minhaMao, mesaGuest = cartaJogada, turno = sala.hostId)
-        }
+        if (souHostLocal) s = s.copy(maoHost = minhaMao, mesaHost = cartaJogada, turno = sala.guestId)
+        else s = s.copy(maoGuest = minhaMao, mesaGuest = cartaJogada, turno = sala.hostId)
 
         if (s.mesaHost != null && s.mesaGuest != null) {
             val cH = Carta(s.mesaHost!!.valor, s.mesaHost!!.naipe)
@@ -767,35 +595,71 @@ class MainActivity : AppCompatActivity() {
         FirebaseManager.enviarJogada(sala.id, s)
     }
 
+    // --- MODO OFFLINE (JOGO CONTRA IA) ---
+    fun iniciarNovaPartida() {
+        isJogoAtivo = true
+        telaAtual = "JOGO"
+        pontosJogador = 0
+        pontosAndroid = 0
+        jogadorComeca = true
+        baralho.clear()
+        maoJogador.clear()
+        maoAndroid.clear()
+        cartasJaJogadas.clear()
+        cartaTrunfo = null
+        cartaAndroidJogada = null
+        cartaJogadorJogada = null
+        trunfo = ""
+        
+        setContentView(R.layout.activity_game)
+        configurarElementosTela()
+        configurarBotoesDeJogo()
+        iniciarRodada()
+    }
+
+    fun configurarElementosTela() {
+        uiCartasJogador = listOf(findViewById(R.id.cartaJogador1), findViewById(R.id.cartaJogador2), findViewById(R.id.cartaJogador3))
+        uiImgsJogador = listOf(findViewById(R.id.imgJogador1), findViewById(R.id.imgJogador2), findViewById(R.id.imgJogador3))
+        uiImgsAndroid = listOf(findViewById(R.id.cartaAndroid1), findViewById(R.id.cartaAndroid2), findViewById(R.id.cartaAndroid3))
+        mesaJogador = findViewById(R.id.cartaMesaJogador)
+        mesaAndroid = findViewById(R.id.cartaMesaAndroid)
+        imgMesaJogador = findViewById(R.id.imgMesaJogador)
+        imgMesaAndroid = findViewById(R.id.imgMesaAndroid)
+        txtScoreJogador = findViewById(R.id.txtScoreJogador)
+        txtScoreAndroid = findViewById(R.id.txtScoreAndroid)
+        txtPartidas = findViewById(R.id.txtPartidas)
+        imgMonte = findViewById(R.id.imgMonte)
+        imgTrunfoMesa = findViewById(R.id.imgTrunfoMesa)
+        txtTrunfoMesa = findViewById(R.id.txtTrunfoMesa)
+        txtFeedbackRodada = findViewById(R.id.txtFeedbackRodada)
+        btnSom = findViewById(R.id.btnSom)
+        btnVibracao = findViewById(R.id.btnVibracao)
+    }
+
     fun configurarBotoesDeJogo() {
-        // Botão de voltar (Salva o jogo e volta ao menu instantaneamente)
         findViewById<Button>(R.id.btnMenu).setOnClickListener {
             vibrar()
             salvarEstadoJogo()
             mostrarMenuPrincipal()
         }
         
-        // Botão de ligar/desligar som
+        btnSom.text = if (somAtivado) "🔊" else "🔇"
         btnSom.setOnClickListener {
             vibrar()
             somAtivado = !somAtivado
             btnSom.text = if (somAtivado) "🔊" else "🔇"
+            getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putBoolean("som_ativo", somAtivado).apply()
         }
-        btnSom.text = if (somAtivado) "🔊" else "🔇"
 
+        btnVibracao.text = if (vibracaoAtivada) "📳" else "📴"
         btnVibracao.setOnClickListener {
             vibracaoAtivada = !vibracaoAtivada
             btnVibracao.text = if (vibracaoAtivada) "📳" else "📴"
-            if (vibracaoAtivada) vibrar(100) // Dá um feedback ao ligar
+            if (vibracaoAtivada) vibrar(100)
+            getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putBoolean("vibracao_ativa", vibracaoAtivada).apply()
         }
-        btnVibracao.text = if (vibracaoAtivada) "📳" else "📴" 
     }
 
-    // =================================================================================
-    // GESTÃO DE ESTADO (SAVE / LOAD)
-    // =================================================================================
-
-    /** Conta uma derrota e encerra o torneio atual nas estatísticas */
     fun registrarDerrotaAbandono() {
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
         val editor = prefs.edit()
@@ -806,13 +670,11 @@ class MainActivity : AppCompatActivity() {
         editor.apply()
     }
 
-    /** Serializa o estado atual do jogo para SharedPreferences */
     fun salvarEstadoJogo() {
         val prefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
         val editor = prefs.edit()
         editor.putBoolean("tem_jogo_salvo", true)
         
-        // Converte listas de objetos para String (Ex: "A|♠,7|♥")
         editor.putString("baralho", baralho.joinToString(",") { "${it.valor}|${it.naipe}" })
         editor.putString("maoJogador", maoJogador.joinToString(",") { "${it.valor}|${it.naipe}" })
         editor.putString("maoAndroid", maoAndroid.joinToString(",") { "${it.valor}|${it.naipe}" })
@@ -831,12 +693,10 @@ class MainActivity : AppCompatActivity() {
         editor.apply()
     }
 
-    /** Reconstrói o estado do jogo a partir das SharedPreferences */
     fun carregarEstadoJogo() {
         val prefs = getSharedPreferences("sonino_save", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("tem_jogo_salvo", false)) return
         
-        // Funções locais para converter String de volta para Objetos
         fun parseCartas(str: String?): MutableList<Carta> {
             if (str.isNullOrEmpty()) return mutableListOf()
             return str.split(",").filter { it.isNotEmpty() }.map { 
@@ -869,7 +729,6 @@ class MainActivity : AppCompatActivity() {
         isJogoAtivo = true
     }
 
-    /** Atualiza a UI com as cartas do jogo salvo */
     fun atualizarTelaCompleta() {
         atualizarPlacar()
         
@@ -896,7 +755,6 @@ class MainActivity : AppCompatActivity() {
         atualizarTela()
     }
 
-    /** Mostra a tela de estatísticas com os dados guardados */
     fun mostrarEstatisticas() {
         isJogoAtivo = false
         telaAtual = "STATS"
@@ -912,7 +770,6 @@ class MainActivity : AppCompatActivity() {
         val partidasPerdidas = prefs.getInt("partidas_perdidas", 0)
         val partidasEmpatadas = prefs.getInt("partidas_empatadas", 0)
 
-        // Preenche os TextViews
         findViewById<TextView>(R.id.txtNivelStats).text = "Nível: $dificuldade"
         findViewById<TextView>(R.id.txtPontos).text = "Pontos: $totalPontos"
         findViewById<TextView>(R.id.txtTotalTorneios).text = "Total de Torneios: $totalTorneios"
@@ -940,92 +797,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // =================================================================================
-    // LÓGICA PRINCIPAL DO JOGO
-    // =================================================================================
-
-    /** Inicia uma nova partida limpando todos os estados anteriores */
-    fun iniciarNovaPartida() {
-        isJogoAtivo = true
-        telaAtual = "JOGO"
-        pontosJogador = 0
-        pontosAndroid = 0
-        jogadorComeca = true
-        baralho.clear()
-        maoJogador.clear()
-        maoAndroid.clear()
-        cartasJaJogadas.clear()
-        cartaTrunfo = null
-        cartaAndroidJogada = null
-        cartaJogadorJogada = null
-        trunfo = ""
-        
-        setContentView(R.layout.activity_game)
-        configurarElementosTela()
-        configurarBotoesDeJogo()
-        iniciarRodada()
-    }
-
-    /** Mapeia os IDs dos XMLs para as variáveis no código */
-    fun configurarElementosTela() {
-        uiCartasJogador = listOf(findViewById(R.id.cartaJogador1), findViewById(R.id.cartaJogador2), findViewById(R.id.cartaJogador3))
-        uiImgsJogador = listOf(findViewById(R.id.imgJogador1), findViewById(R.id.imgJogador2), findViewById(R.id.imgJogador3))
-        uiImgsAndroid = listOf(findViewById(R.id.cartaAndroid1), findViewById(R.id.cartaAndroid2), findViewById(R.id.cartaAndroid3))
-        mesaJogador = findViewById(R.id.cartaMesaJogador)
-        mesaAndroid = findViewById(R.id.cartaMesaAndroid)
-        imgMesaJogador = findViewById(R.id.imgMesaJogador)
-        imgMesaAndroid = findViewById(R.id.imgMesaAndroid)
-        txtScoreJogador = findViewById(R.id.txtScoreJogador)
-        txtScoreAndroid = findViewById(R.id.txtScoreAndroid)
-        txtPartidas = findViewById(R.id.txtPartidas)
-        imgMonte = findViewById(R.id.imgMonte)
-        imgTrunfoMesa = findViewById(R.id.imgTrunfoMesa)
-        txtTrunfoMesa = findViewById(R.id.txtTrunfoMesa)
-        txtFeedbackRodada = findViewById(R.id.txtFeedbackRodada)
-        btnSom = findViewById(R.id.btnSom)
-        btnVibracao = findViewById(R.id.btnVibracao)
-    }
-
-    /** Procura a imagem da carta na pasta drawable. Ex: "a_copas" */
     fun getImagemCarta(carta: Carta): Int {
         val valorNome = if (carta.valor.toIntOrNull() != null) "n${carta.valor}" else carta.valor.lowercase()
         val naipeNome = when(carta.naipe) { "♠" -> "espadas"; "♥" -> "copas"; "♦" -> "ouros"; "♣" -> "paus"; else -> "" }
         return resources.getIdentifier("${valorNome}_${naipeNome}", "drawable", packageName)
     }
 
-    /** Renderiza uma carta (Imagem ou Texto) num determinado local da tela */
     fun mostrarCarta(tv: TextView, img: ImageView, carta: Carta?) {
         if (carta == null) {
             tv.text = ""; img.visibility = ImageView.GONE; tv.visibility = TextView.GONE; return
         }
         val idImagem = getImagemCarta(carta)
         if (idImagem != 0) {
-            // Usa a imagem
             img.setImageResource(idImagem); img.visibility = ImageView.VISIBLE; tv.visibility = TextView.GONE
         } else {
-            // Fallback: Usa texto caso a imagem não exista
             img.visibility = ImageView.GONE; tv.visibility = TextView.VISIBLE
             tv.text = carta.toString()
             tv.setTextColor(if (carta.naipe == "♥" || carta.naipe == "♦") Color.RED else Color.BLACK)
         }
     }
     
-    /** Atualiza o placar numérico no topo da tela */
     fun atualizarPlacar() {
         txtScoreJogador.text = "$pontosJogador pts"
         txtScoreAndroid.text = "$pontosAndroid pts"
         txtPartidas.text = "$partidasJogador x $partidasAndroid"
     }
 
-    /** Prepara o baralho e distribui as cartas de uma nova rodada */
     fun iniciarRodada() {
         var isFirstDeal = false
         if (baralho.isEmpty() && maoJogador.isEmpty() && maoAndroid.isEmpty()) {
-            // Cria o baralho de 40 cartas
             for (n in naipes) { for (v in valores) { baralho.add(Carta(v, n)) } }
             baralho.shuffle()
             
-            // Define o trunfo (última carta)
             cartaTrunfo = baralho.last()
             trunfo = cartaTrunfo!!.naipe
             
@@ -1033,7 +836,6 @@ class MainActivity : AppCompatActivity() {
             imgTrunfoMesa.visibility = View.VISIBLE
             txtTrunfoMesa.visibility = View.VISIBLE
 
-            // Distribui 3 cartas para cada jogador
             for (i in 0..2) {
                 maoJogador.add(baralho.removeAt(0))
                 maoAndroid.add(baralho.removeAt(0))
@@ -1043,9 +845,9 @@ class MainActivity : AppCompatActivity() {
         
         imgMonte.visibility = if (baralho.isNotEmpty()) View.VISIBLE else View.GONE
 
-        // Limpa a mesa e reseta animações
         mesaJogador.text = ""; mesaAndroid.text = ""
         imgMesaJogador.visibility = ImageView.GONE; imgMesaAndroid.visibility = ImageView.GONE
+        
         imgMesaJogador.translationX = 0f; imgMesaJogador.translationY = 0f; imgMesaJogador.alpha = 1f
         imgMesaAndroid.translationX = 0f; imgMesaAndroid.translationY = 0f; imgMesaAndroid.alpha = 1f
 
@@ -1058,14 +860,12 @@ class MainActivity : AppCompatActivity() {
         if (isFirstDeal) {
             habilitarCliquesJogador(false)
             animarDistribuicao()
-            // Espera a animação terminar antes de liberar o jogo
             mainHandler.postDelayed({
                 if (!isJogoAtivo) return@postDelayed
                 if (jogadorComeca) habilitarCliquesJogador(true)
                 else androidJogaPrimeiro()
             }, 1600)
         } else {
-            // Rodada normal
             if (jogadorComeca) {
                 habilitarCliquesJogador(true)
             } else {
@@ -1077,7 +877,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Cria o efeito visual das cartas a voarem do monte para as mãos */
     fun animarDistribuicao() {
         imgMonte.doOnLayout {
             if (!isJogoAtivo) return@doOnLayout
@@ -1116,7 +915,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Efeito visual das cartas a voarem para o vencedor */
     fun animarDescarte(jogadorGanhou: Boolean) {
         val targetArea = if (jogadorGanhou) findViewById<View>(R.id.areaJogador) else findViewById<View>(R.id.areaAndroid)
         val targetLoc = IntArray(2)
@@ -1137,7 +935,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Permite ou bloqueia o jogador de clicar nas cartas */
     fun habilitarCliquesJogador(habilitar: Boolean) {
         for (i in 0..2) {
             if (habilitar) {
@@ -1150,7 +947,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Desenha as cartas atuais na mão do jogador */
     fun atualizarTela() {
         for (i in 0..2) {
             if (i < maoJogador.size) {
@@ -1164,7 +960,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Ação disparada quando o jogador clica numa carta */
     fun jogarCarta(index: Int) {
         if (maoJogador.size <= index || !isJogoAtivo) return
         habilitarCliquesJogador(false)
@@ -1178,33 +973,28 @@ class MainActivity : AppCompatActivity() {
         atualizarTela()
 
         if (cartaAndroidJogada != null) {
-            // O Android já jogou, então avaliamos direto
             mainHandler.postDelayed({ 
                 if (isJogoAtivo) avaliarRodada(cartaJogada, cartaAndroidJogada!!, false) 
             }, 800)
         } else {
-            // Espera o Android jogar
             mainHandler.postDelayed({ 
                 if (isJogoAtivo) androidResponde(cartaJogada) 
             }, 1000)
         }
     }
 
-    /** A IA do Android joga primeiro (ela escolheu quem começa) */
     fun androidJogaPrimeiro() {
         if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
         var indexJogada = 0
         when (dificuldade) {
-            "Fácil" -> indexJogada = maoAndroid.indices.random() // Joga aleatório
+            "Fácil" -> indexJogada = maoAndroid.indices.random()
             "Difícil" -> {
-                // Tenta livrar-se das cartas sem pontos primeiro
                 val naoTrunfos = maoAndroid.indices.filter { maoAndroid[it].naipe != trunfo }
                 if (naoTrunfos.isNotEmpty()) indexJogada = naoTrunfos.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
                 else indexJogada = maoAndroid.indices.minByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
             }
             "Mestre" -> {
-                // Ataca com Ás (garante a rodada) ou joga a menor carta
                 val ases = maoAndroid.indices.filter { maoAndroid[it].valor == "A" }
                 if (ases.isNotEmpty()) indexJogada = ases.first()
                 else {
@@ -1220,10 +1010,9 @@ class MainActivity : AppCompatActivity() {
         mostrarCarta(mesaAndroid, imgMesaAndroid, cartaAndroidJogada)
         atualizarTela()
 
-        habilitarCliquesJogador(true) // Libera o jogador para responder
+        habilitarCliquesJogador(true)
     }
 
-    /** A IA do Android responde à jogada do jogador */
     fun androidResponde(cartaJogador: Carta) {
         if (maoAndroid.isEmpty() || !isJogoAtivo) return
         
@@ -1233,19 +1022,16 @@ class MainActivity : AppCompatActivity() {
         when (dificuldade) {
             "Fácil" -> indexJogada = maoAndroid.indices.random()
             "Difícil" -> {
-                // Encontra cartas que consigam ganhar a rodada
                 var cartasQueGanham = mutableListOf<Int>()
                 for (i in maoAndroid.indices) {
                     val c = maoAndroid[i]
                     if (c.naipe == cartaJogador.naipe && valores.indexOf(c.valor) < valores.indexOf(cartaJogador.valor)) cartasQueGanham.add(i)
                     else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) cartasQueGanham.add(i)
                 }
-                // Usa a menor carta possível para ganhar e guarda as boas
                 if (cartasQueGanham.isNotEmpty()) indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
                 else indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
             }
             "Mestre" -> {
-                // Inteligência avançada (Mestre)
                 var cartasQueGanham = mutableListOf<Int>()
                 for (i in maoAndroid.indices) {
                     val c = maoAndroid[i]
@@ -1253,7 +1039,6 @@ class MainActivity : AppCompatActivity() {
                     else if (c.naipe == trunfo && cartaJogador.naipe != trunfo) cartasQueGanham.add(i)
                 }
                 if (cartasQueGanham.isNotEmpty()) {
-                    // Não gasta trunfo para ganhar rodada sem pontos
                     if (pontosNaMesa == 0 && !cartasQueGanham.any { maoAndroid[it].naipe != trunfo }) indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
                     else indexJogada = cartasQueGanham.maxByOrNull { valores.indexOf(maoAndroid[it].valor) }!!
                 } else indexJogada = maoAndroid.indices.minByOrNull { pontosCartas[maoAndroid[it].valor] ?: 0 }!!
@@ -1274,25 +1059,21 @@ class MainActivity : AppCompatActivity() {
         }, 500)
     }
 
-    /** Verifica quem ganhou a rodada e distribui os pontos */
     fun avaliarRodada(cartaJogador: Carta, cartaAndroid: Carta, jogadorFoiPrimeiro: Boolean) {
         var jogadorGanhou = false
         
-        // Regras de vencedor da rodada
         if (cartaJogador.naipe == cartaAndroid.naipe) {
             if (valores.indexOf(cartaJogador.valor) < valores.indexOf(cartaAndroid.valor)) jogadorGanhou = true
         } else {
             if (cartaJogador.naipe == trunfo) jogadorGanhou = true
             else if (cartaAndroid.naipe == trunfo) jogadorGanhou = false
-            else jogadorGanhou = jogadorFoiPrimeiro // Ninguém jogou trunfo, quem começou leva
+            else jogadorGanhou = jogadorFoiPrimeiro 
         }
 
         cartasJaJogadas.add(cartaJogador)
         cartasJaJogadas.add(cartaAndroid)
 
-        // Soma os pontos
         val pontosRodada = (pontosCartas[cartaJogador.valor] ?: 0) + (pontosCartas[cartaAndroid.valor] ?: 0)
-        
         if (jogadorGanhou) {
             pontosJogador += pontosRodada
             vibrar(100) 
@@ -1301,12 +1082,11 @@ class MainActivity : AppCompatActivity() {
             vibrar(80)
         }
         
-        jogadorComeca = jogadorGanhou // O vencedor começa a próxima
+        jogadorComeca = jogadorGanhou 
         atualizarPlacar()
 
         animarDescarte(jogadorGanhou)
 
-        // Prepara para a próxima rodada após 1.5 segundos
         mainHandler.postDelayed({
             if (!isJogoAtivo) return@postDelayed
             mostrarCarta(mesaJogador, imgMesaJogador, null)
@@ -1314,7 +1094,6 @@ class MainActivity : AppCompatActivity() {
             cartaAndroidJogada = null
             cartaJogadorJogada = null
             
-            // Compra cartas novas se houver no baralho
             if (baralho.isNotEmpty()) {
                 if (jogadorGanhou) {
                     if (baralho.isNotEmpty()) maoJogador.add(baralho.removeAt(0))
@@ -1326,14 +1105,13 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (maoJogador.isEmpty() && maoAndroid.isEmpty()) {
-                finalizarPartida() // Acabaram as cartas
+                finalizarPartida()
             } else {
                 iniciarRodada()
             }
         }, 1500)
     }
 
-    /** Chamado quando o baralho e as mãos ficam vazios */
     fun finalizarPartida() {
         if (!isJogoAtivo) return
         
@@ -1341,7 +1119,6 @@ class MainActivity : AppCompatActivity() {
         var partidaGanha = false
         var partidaEmpatada = false
 
-        // Regra de vitória (61 pontos)
         if (pontosJogador >= 61 && pontosJogador > pontosAndroid) {
             partidasJogador++
             partidaGanha = true
@@ -1358,7 +1135,6 @@ class MainActivity : AppCompatActivity() {
             mensagem = "Empate na partida!"
             vibrar(100)
         } else {
-            // Caso ninguém chegue a 61, quem tiver mais pontos ganha
             if (pontosJogador > pontosAndroid) {
                 partidasJogador++
                 partidaGanha = true
@@ -1374,7 +1150,6 @@ class MainActivity : AppCompatActivity() {
         atualizarPlacar()
         mostrarFeedback(mensagem)
 
-        // Guarda as estatísticas da partida
         val prefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
         var editor = prefs.edit()
         editor.putInt("total_pontos", prefs.getInt("total_pontos", 0) + pontosJogador)
@@ -1386,18 +1161,19 @@ class MainActivity : AppCompatActivity() {
         
         editor.apply()
 
-        // Espera para o jogador ler a mensagem
         mainHandler.postDelayed({
             if (!isJogoAtivo) return@postDelayed
             
-            // Verifica se o torneio (melhor de 3) acabou
-            if (partidasJogador == 3 || partidasAndroid == 3) {
-                val vencedorFinal = if (partidasJogador == 3) "VOCÊ VENCEU O TORNEIO!" else "O ANDROID VENCEU O TORNEIO!"
+            if (partidasJogador == 2 || partidasAndroid == 2) {
+                val vencedorFinal = if (partidasJogador == 2) "VOCÊ VENCEU O TORNEIO!" else "O ANDROID VENCEU O TORNEIO!"
+                if (partidasJogador == 2) {
+                    saldoMoedas += 100
+                    getSharedPreferences("sonino_prefs", Context.MODE_PRIVATE).edit().putInt("saldo_moedas", saldoMoedas).apply()
+                }
                 mostrarFeedback(vencedorFinal)
                 tocarSom(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
                 vibrar(300)
                 
-                // Salva estatísticas do torneio
                 editor = prefs.edit()
                 editor.putInt("total_torneios", prefs.getInt("total_torneios", 0) + 1)
                 if (partidasJogador == 2) {
@@ -1407,18 +1183,13 @@ class MainActivity : AppCompatActivity() {
                 }
                 editor.apply()
 
-                // Apaga o auto-save, pois o torneio já terminou
                 getSharedPreferences("sonino_save", Context.MODE_PRIVATE).edit().clear().apply()
 
                 mainHandler.postDelayed({
-                    if (isJogoAtivo) {
-                        // Mostra o anúncio antes de voltar ao menu
-                        mostrarAnuncio { mostrarMenuPrincipal() }
-                    }
+                    if (isJogoAtivo) mostrarAnuncio { mostrarMenuPrincipal() }
                 }, 4000)
                 
             } else {
-                // Vai para a próxima partida do torneio
                 baralho.clear()
                 maoJogador.clear()
                 maoAndroid.clear()
@@ -1428,27 +1199,26 @@ class MainActivity : AppCompatActivity() {
         }, 4000)
     }
 
-    /** Mostra uma pequena caixa de texto no centro do ecrã */
     fun mostrarFeedback(texto: String) {
-        txtFeedbackRodada.text = texto
-        txtFeedbackRodada.visibility = View.VISIBLE
-        txtFeedbackRodada.alpha = 0f
-        txtFeedbackRodada.animate().alpha(1f).setDuration(300).withEndAction {
-            mainHandler.postDelayed({
-                txtFeedbackRodada.animate().alpha(0f).setDuration(300).withEndAction { txtFeedbackRodada.visibility = View.GONE }
-            }, 1000)
-        }.start()
-    }
-
-    override fun onBackPressed() {
-        if (telaAtual == "MENU") {
-            super.onBackPressed() // Fecha o aplicativo normalmente
+        if (telaAtual == "ONLINE_GAME") {
+            val txt = findViewById<TextView>(R.id.txtFeedbackOnline)
+            txt.text = texto
+            txt.visibility = View.VISIBLE
+            txt.alpha = 0f
+            txt.animate().alpha(1f).setDuration(300).withEndAction {
+                mainHandler.postDelayed({
+                    txt.animate().alpha(0f).setDuration(300).withEndAction { txt.visibility = View.GONE }
+                }, 1000)
+            }.start()
         } else {
-            if (isJogoAtivo) {
-                // Se estiver a jogar, guarda o estado antes de sair para o menu
-                salvarEstadoJogo()
-            }
-            mostrarMenuPrincipal() // Volta para o menu
+            txtFeedbackRodada.text = texto
+            txtFeedbackRodada.visibility = View.VISIBLE
+            txtFeedbackRodada.alpha = 0f
+            txtFeedbackRodada.animate().alpha(1f).setDuration(300).withEndAction {
+                mainHandler.postDelayed({
+                    txtFeedbackRodada.animate().alpha(0f).setDuration(300).withEndAction { txtFeedbackRodada.visibility = View.GONE }
+                }, 1000)
+            }.start()
         }
     }
 }
