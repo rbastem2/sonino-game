@@ -13,6 +13,7 @@ data class Sala(
     val turno: String = "", // ID do jogador que deve jogar
     val iniciouRodada: String = "", // ID de quem jogou a primeira carta desta rodada
     val trunfo: String = "",
+    val cartaTrunfoVisual: CartaFire? = null,
     val baralho: List<CartaFire> = emptyList(),
     val maoHost: List<CartaFire> = emptyList(),
     val maoGuest: List<CartaFire> = emptyList(),

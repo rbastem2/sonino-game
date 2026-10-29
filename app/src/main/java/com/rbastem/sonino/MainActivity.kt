@@ -509,12 +509,25 @@ class MainActivity : AppCompatActivity() {
                 val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCE VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCE PERDEU!" else "EMPATE!"
                 val msgFinal = "Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + " | " + vencedor
                 
+                // Guarda nas estatísticas locais
+                val statsPrefs = getSharedPreferences("sonino_stats", Context.MODE_PRIVATE)
+                val editor = statsPrefs.edit()
+                editor.putInt("total_partidas", statsPrefs.getInt("total_partidas", 0) + 1)
+                if (sala.pontosHost > sala.pontosGuest) {
+                    editor.putInt("partidas_ganhas", statsPrefs.getInt("partidas_ganhas", 0) + 1)
+                } else if (sala.pontosGuest > sala.pontosHost) {
+                    editor.putInt("partidas_perdidas", statsPrefs.getInt("partidas_perdidas", 0) + 1)
+                } else {
+                    editor.putInt("partidas_empatadas", statsPrefs.getInt("partidas_empatadas", 0) + 1)
+                }
+                editor.apply()
+
                 AlertDialog.Builder(this)
                     .setTitle("Fim do Jogo Online")
                     .setMessage(msgFinal)
                     .setPositiveButton("Sair") { _, _ ->
                         FirebaseManager.pararDeEscutar()
-                        mostrarMenuPrincipal()
+                        mostrarAnuncio { mostrarMenuPrincipal() } // Mostra o AdMob
                     }.setCancelable(false).show()
             }
         } else if (sala.turno == meuId) {
@@ -544,7 +557,12 @@ class MainActivity : AppCompatActivity() {
         else s = s.copy(maoGuest = minhaMao, mesaGuest = cartaJogada, turno = sala.hostId)
 
         if (s.mesaHost != null && s.mesaGuest != null) {
-            val cH = Carta(s.mesaHost!!.valor, s.mesaHost!!.naipe)
+            // Envia o estado com as duas cartas na mesa para os dois verem
+            FirebaseManager.enviarJogada(sala.id, s)
+            
+            // Espera 1.5 segundos antes de avaliar (igual ao offline)
+            mainHandler.postDelayed({
+                val cH = Carta(s.mesaHost!!.valor, s.mesaHost!!.naipe)
             val cG = Carta(s.mesaGuest!!.valor, s.mesaGuest!!.naipe)
             var hostGanhou = false
 
@@ -585,14 +603,17 @@ class MainActivity : AppCompatActivity() {
             var status = "JOGANDO"
             if (mHost.isEmpty() && mGuest.isEmpty()) status = "FINALIZADO"
 
-            s = s.copy(
-                mesaHost = null, mesaGuest = null,
-                pontosHost = nPontosHost, pontosGuest = nPontosGuest,
-                baralho = bara, maoHost = mHost, maoGuest = mGuest,
-                turno = proxTurno, iniciouRodada = proxTurno, status = status
-            )
+                s = s.copy(
+                    mesaHost = null, mesaGuest = null,
+                    pontosHost = nPontosHost, pontosGuest = nPontosGuest,
+                    baralho = bara, maoHost = mHost, maoGuest = mGuest,
+                    turno = proxTurno, iniciouRodada = proxTurno, status = status
+                )
+                FirebaseManager.enviarJogada(sala.id, s)
+            }, 1500)
+        } else {
+            FirebaseManager.enviarJogada(sala.id, s)
         }
-        FirebaseManager.enviarJogada(sala.id, s)
     }
 
     // --- MODO OFFLINE (JOGO CONTRA IA) ---

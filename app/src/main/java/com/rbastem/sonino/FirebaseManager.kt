@@ -53,13 +53,15 @@ object FirebaseManager {
             maoGuest.add(baralho.removeAt(0))
         }
 
-        val trunfo = baralho.last().naipe // Última carta define o trunfo
+        val trunfoCarta = baralho.last()
+        val trunfo = trunfoCarta.naipe // Última carta define o trunfo
 
         val salaAtualizada = sala.copy(
             baralho = baralho,
             maoHost = maoHost,
             maoGuest = maoGuest,
             trunfo = trunfo,
+            cartaTrunfoVisual = trunfoCarta,
             turno = sala.hostId,
             iniciouRodada = sala.hostId
         )
