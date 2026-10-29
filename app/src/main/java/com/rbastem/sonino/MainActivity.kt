@@ -527,18 +527,15 @@ class MainActivity : AppCompatActivity() {
         val mesaOponente = if (souHostLocal) sala.mesaGuest else sala.mesaHost
         val mesaEu = if (souHostLocal) sala.mesaHost else sala.mesaGuest
 
-        // Placar
         findViewById<TextView>(R.id.txtMinhaPontuacaoOnline).text = (if (souHostLocal) sala.pontosHost else sala.pontosGuest).toString() + " pts"
         findViewById<TextView>(R.id.txtPontuacaoOponenteOnline).text = (if (souHostLocal) sala.pontosGuest else sala.pontosHost).toString() + " pts"
 
-        // Cartas do oponente
         val opCards = listOf(R.id.cartaOp1, R.id.cartaOp2, R.id.cartaOp3)
         val maoOponenteTamanho = if (souHostLocal) sala.maoGuest.size else sala.maoHost.size
         for (i in 0 until 3) {
             findViewById<ImageView>(opCards[i]).visibility = if (i < maoOponenteTamanho) android.view.View.VISIBLE else android.view.View.GONE
         }
 
-        // Mesa
         val imgMesaOp = findViewById<ImageView>(R.id.imgMesaOp)
         val imgMesaEu = findViewById<ImageView>(R.id.imgMesaEu)
         val imgTrunfo = findViewById<ImageView>(R.id.imgTrunfoOnline)
@@ -561,7 +558,6 @@ class MainActivity : AppCompatActivity() {
             imgTrunfo.visibility = android.view.View.VISIBLE
         }
 
-        // Minhas cartas
         val myCardsUI = listOf(R.id.myCard1, R.id.myCard2, R.id.myCard3)
         for (i in 0 until 3) {
             val img = findViewById<ImageView>(myCardsUI[i])
@@ -580,7 +576,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Texto de Vez e Fim de Jogo
         val txtVez = findViewById<TextView>(R.id.txtVez)
         if (sala.status == "FINALIZADO") {
             txtVez.text = "Fim de Jogo"
@@ -588,12 +583,13 @@ class MainActivity : AppCompatActivity() {
             if (!isDialogShowing) {
                 isDialogShowing = true
                 val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCÊ VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCÊ PERDEU!" else "EMPATE!"
+                val msgFinal = "Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + "
+
+" + vencedor
                 
                 AlertDialog.Builder(this)
                     .setTitle("Fim do Jogo Online")
-                    .setMessage("Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + "
-
-" + vencedor)
+                    .setMessage(msgFinal)
                     .setPositiveButton("Sair") { _, _ ->
                         FirebaseManager.pararDeEscutar()
                         mostrarMenuPrincipal()
@@ -609,7 +605,6 @@ class MainActivity : AppCompatActivity() {
             txtVez.setTextColor(android.graphics.Color.RED)
         }
         
-        // Animação de descarte
         if (mesaEu == null && mesaOponente == null && sala.baralho.isNotEmpty()) {
              imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction {
                  imgMesaEu.alpha = 1f
