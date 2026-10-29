@@ -582,6 +582,84 @@ class MainActivity : AppCompatActivity() {
             txtVez.setTextColor(android.graphics.Color.WHITE)
             if (!isDialogShowing) {
                 isDialogShowing = true
+                val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCE VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCE PERDEU!" else "EMPATE!"
+                val msgFinal = "Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + " | " + vencedor
+                
+                AlertDialog.Builder(this)
+                    .setTitle("Fim do Jogo Online")
+                    .setMessage(msgFinal)
+                    .setPositiveButton("Sair") { _, _ ->
+                        FirebaseManager.pararDeEscutar()
+                        mostrarMenuPrincipal()
+                    }
+                    .setCancelable(false)
+                    .show()
+            }
+        } else if (sala.turno == meuId) {
+            txtVez.text = "A sua vez!"
+            txtVez.setTextColor(android.graphics.Color.GREEN)
+        } else {
+            txtVez.text = "Vez do oponente..."
+            txtVez.setTextColor(android.graphics.Color.RED)
+        }
+        
+        if (mesaEu == null && mesaOponente == null && sala.baralho.isNotEmpty()) {
+             imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction {
+                 imgMesaEu.alpha = 1f
+                 imgMesaEu.visibility = android.view.View.GONE
+             }
+             imgMesaOp.animate().alpha(0f).setDuration(300).withEndAction {
+                 imgMesaOp.alpha = 1f
+                 imgMesaOp.visibility = android.view.View.GONE
+             }
+        }
+    }
+        val imgMesaOp = findViewById<ImageView>(R.id.imgMesaOp)
+        val imgMesaEu = findViewById<ImageView>(R.id.imgMesaEu)
+        val imgTrunfo = findViewById<ImageView>(R.id.imgTrunfoOnline)
+        
+        if (mesaOponente != null) {
+            val c = Carta(mesaOponente.valor, mesaOponente.naipe)
+            imgMesaOp.setImageResource(getImagemCarta(c))
+            imgMesaOp.visibility = android.view.View.VISIBLE
+        } else imgMesaOp.visibility = android.view.View.GONE
+
+        if (mesaEu != null) {
+            val c = Carta(mesaEu.valor, mesaEu.naipe)
+            imgMesaEu.setImageResource(getImagemCarta(c))
+            imgMesaEu.visibility = android.view.View.VISIBLE
+        } else imgMesaEu.visibility = android.view.View.GONE
+
+        if (sala.trunfo.isNotEmpty()) {
+            val cartaTrunfo = Carta("A", sala.trunfo)
+            imgTrunfo.setImageResource(getImagemCarta(cartaTrunfo))
+            imgTrunfo.visibility = android.view.View.VISIBLE
+        }
+
+        val myCardsUI = listOf(R.id.myCard1, R.id.myCard2, R.id.myCard3)
+        for (i in 0 until 3) {
+            val img = findViewById<ImageView>(myCardsUI[i])
+            if (i < minhaMao.size) {
+                img.setImageResource(getImagemCarta(Carta(minhaMao[i].valor, minhaMao[i].naipe)))
+                img.visibility = android.view.View.VISIBLE
+                if (sala.turno == meuId && sala.status == "JOGANDO") {
+                    img.setOnClickListener { jogarCartaOnline(i) }
+                    img.alpha = 1.0f
+                } else {
+                    img.setOnClickListener(null)
+                    img.alpha = 0.6f
+                }
+            } else {
+                img.visibility = android.view.View.GONE
+            }
+        }
+
+        val txtVez = findViewById<TextView>(R.id.txtVez)
+        if (sala.status == "FINALIZADO") {
+            txtVez.text = "Fim de Jogo"
+            txtVez.setTextColor(android.graphics.Color.WHITE)
+            if (!isDialogShowing) {
+                isDialogShowing = true
                 val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCÊ VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCÊ PERDEU!" else "EMPATE!"
                 val msgFinal = "Pontos: " + sala.pontosHost + " vs " + sala.pontosGuest + "
 
