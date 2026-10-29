@@ -11,6 +11,9 @@
     
 
     
+    
+
+    
     <LinearLayout
         android:id="@+id/layoutMoedas"
         android:layout_width="wrap_content"

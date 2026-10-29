@@ -106,7 +106,10 @@ class MainActivity : AppCompatActivity() {
     var cartaAndroidJogada: Carta? = null
     var cartaJogadorJogada: Carta? = null
     private var isJogoAtivo = false
-    private var telaAtual = "MENU" // Flag para evitar callbacks se o utilizador sair da tela
+    private var telaAtual = "MENU"
+    private var salaAtual: Sala? = null
+    private var souHost = false
+    private var isDialogShowing = false // Flag para evitar callbacks se o utilizador sair da tela
 
     /**
      * Ciclo de vida: Chamado quando a aplicação inicia.
@@ -487,14 +490,197 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun iniciarJogoOnline(sala: com.rbastem.sonino.Sala) {
-        // Aqui vamos preparar a lógica para o modo online na próxima etapa.
-        // Por agora, apenas mostramos uma mensagem de sucesso.
-        AlertDialog.Builder(this)
-            .setTitle("Conectado!")
-            .setMessage("Oponente encontrado! Sala: ${sala.codigo}. (A interface do jogo online será construída na próxima etapa).")
-            .setPositiveButton("OK", null)
-            .show()
+    fun iniciarJogoOnline(salaInicial: com.rbastem.sonino.Sala) {
+        salaAtual = salaInicial
+        souHost = salaInicial.hostId == FirebaseManager.getMeuId()
+        telaAtual = "ONLINE_GAME"
+        
+        setContentView(R.layout.activity_online_game)
+        
+        // Se eu sou o Host, eu gero as cartas e envio para o Firebase
+        if (souHost) {
+            FirebaseManager.iniciarPartida(salaInicial) { novaSala ->
+                salaAtual = novaSala
+                FirebaseManager.escutarSala(novaSala.id) { salaAtualizada ->
+                    salaAtual = salaAtualizada
+                    runOnUiThread { atualizarTelaOnline(salaAtualizada) }
+                }
+            }
+        } else {
+            // Se eu sou o Guest, apenas ouço as alterações
+            FirebaseManager.escutarSala(salaInicial.id) { salaAtualizada ->
+                salaAtual = salaAtualizada
+                runOnUiThread { atualizarTelaOnline(salaAtualizada) }
+            }
+        }
+
+        findViewById<Button>(R.id.btnMenuOnline).setOnClickListener {
+            FirebaseManager.pararDeEscutar()
+            mostrarMenuPrincipal()
+        }
+    }
+
+    fun atualizarTelaOnline(sala: Sala) {
+        val meuId = FirebaseManager.getMeuId()
+        val souHostLocal = sala.hostId == meuId
+        val minhaMao = if (souHostLocal) sala.maoHost else sala.maoGuest
+        val mesaOponente = if (souHostLocal) sala.mesaGuest else sala.mesaHost
+        val mesaEu = if (souHostLocal) sala.mesaHost else sala.mesaGuest
+
+        // Placar
+        findViewById<TextView>(R.id.txtMinhaPontuacaoOnline).text = "${if (souHostLocal) sala.pontosHost else sala.pontosGuest} pts"
+        findViewById<TextView>(R.id.txtPontuacaoOponenteOnline).text = "${if (souHostLocal) sala.pontosGuest else sala.pontosHost} pts"
+
+        // Cartas do oponente
+        val opCards = listOf(R.id.cartaOp1, R.id.cartaOp2, R.id.cartaOp3)
+        val maoOponenteTamanho = if (souHostLocal) sala.maoGuest.size else sala.maoHost.size
+        for (i in 0 until 3) {
+            findViewById<ImageView>(opCards[i]).visibility = if (i < maoOponenteTamanho) android.view.View.VISIBLE else android.view.View.GONE
+        }
+
+        // Mesa
+        val imgMesaOp = findViewById<ImageView>(R.id.imgMesaOp)
+        val imgMesaEu = findViewById<ImageView>(R.id.imgMesaEu)
+        val imgTrunfo = findViewById<ImageView>(R.id.imgTrunfoOnline)
+        
+        if (mesaOponente != null) {
+            val c = Carta(mesaOponente.valor, mesaOponente.naipe)
+            imgMesaOp.setImageResource(getImagemCarta(c))
+            imgMesaOp.visibility = android.view.View.VISIBLE
+        } else imgMesaOp.visibility = android.view.View.GONE
+
+        if (mesaEu != null) {
+            val c = Carta(mesaEu.valor, mesaEu.naipe)
+            imgMesaEu.setImageResource(getImagemCarta(c))
+            imgMesaEu.visibility = android.view.View.VISIBLE
+        } else imgMesaEu.visibility = android.view.View.GONE
+
+        if (sala.trunfo.isNotEmpty()) {
+            val cartaTrunfo = Carta("A", sala.trunfo) // Simbolo visual do trunfo
+            imgTrunfo.setImageResource(getImagemCarta(cartaTrunfo))
+            imgTrunfo.visibility = android.view.View.VISIBLE
+        }
+
+        // Minhas cartas
+        val myCardsUI = listOf(R.id.myCard1, R.id.myCard2, R.id.myCard3)
+        for (i in 0 until 3) {
+            val img = findViewById<ImageView>(myCardsUI[i])
+            if (i < minhaMao.size) {
+                img.setImageResource(getImagemCarta(Carta(minhaMao[i].valor, minhaMao[i].naipe)))
+                img.visibility = android.view.View.VISIBLE
+                if (sala.turno == meuId && sala.status == "JOGANDO") {
+                    img.setOnClickListener { jogarCartaOnline(i) }
+                    img.alpha = 1.0f // Iluminada
+                } else {
+                    img.setOnClickListener(null)
+                    img.alpha = 0.6f // Escurecida
+                }
+            } else {
+                img.visibility = android.view.View.GONE
+            }
+        }
+
+        // Texto de Vez
+        val txtVez = findViewById<TextView>(R.id.txtVez)
+        if (sala.status == "FINALIZADO") {
+            txtVez.text = "Fim de Jogo"
+            txtVez.setTextColor(android.graphics.Color.WHITE)
+            if (!isDialogShowing) {
+                isDialogShowing = true
+                val vencedor = if (sala.pontosHost > sala.pontosGuest) "VOCÊ VENCEU!" else if (sala.pontosGuest > sala.pontosHost) "VOCÊ PERDEU!" else "EMPATE!"
+                AlertDialog.Builder(this)
+                    .setTitle("Fim do Jogo Online")
+                    .setMessage("Pontos: ${sala.pontosHost} vs ${sala.pontosGuest}
+
+$vencedor")
+                    .setPositiveButton("Sair") { _, _ -> FirebaseManager.pararDeEscutar(); mostrarMenuPrincipal() }
+                    .setCancelable(false).show()
+            }
+        } else if (sala.turno == meuId) {
+            txtVez.text = "A sua vez!"
+            txtVez.setTextColor(android.graphics.Color.GREEN)
+        } else {
+            txtVez.text = "Vez do oponente..."
+            txtVez.setTextColor(android.graphics.Color.RED)
+        }
+        
+        // Animação de descarte se a mesa ficou vazia
+        if (mesaEu == null && mesaOponente == null && sala.baralho.isNotEmpty()) {
+             imgMesaEu.animate().alpha(0f).setDuration(300).withEndAction { imgMesaEu.alpha = 1f; imgMesaEu.visibility = android.view.View.GONE }
+             imgMesaOp.animate().alpha(0f).setDuration(300).withEndAction { imgMesaOp.alpha = 1f; imgMesaOp.visibility = android.view.View.GONE }
+        }
+    }
+
+    fun jogarCartaOnline(index: Int) {
+        val sala = salaAtual ?: return
+        val meuId = FirebaseManager.getMeuId() ?: return
+        if (sala.turno != meuId) return
+
+        vibrar(50)
+        tocarSom(ToneGenerator.TONE_PROP_BEEP, 100)
+
+        val souHostLocal = sala.hostId == meuId
+        val minhaMao = if (souHostLocal) sala.maoHost.toMutableList() else sala.maoGuest.toMutableList()
+        if (index >= minhaMao.size) return
+        val cartaJogada = minhaMao.removeAt(index)
+
+        var s = sala
+        if (souHostLocal) {
+            s = s.copy(maoHost = minhaMao, mesaHost = cartaJogada, turno = sala.guestId)
+        } else {
+            s = s.copy(maoGuest = minhaMao, mesaGuest = cartaJogada, turno = sala.hostId)
+        }
+
+        if (s.mesaHost != null && s.mesaGuest != null) {
+            val cH = Carta(s.mesaHost!!.valor, s.mesaHost!!.naipe)
+            val cG = Carta(s.mesaGuest!!.valor, s.mesaGuest!!.naipe)
+            var hostGanhou = false
+
+            if (cH.naipe == cG.naipe) {
+                if (valores.indexOf(cH.valor) < valores.indexOf(cG.valor)) hostGanhou = true
+            } else {
+                if (cH.naipe == s.trunfo) hostGanhou = true
+                else if (cG.naipe == s.trunfo) hostGanhou = false
+                else hostGanhou = (s.iniciouRodada == s.hostId)
+            }
+
+            val ptsH = pontosCartas[cH.valor] ?: 0
+            val ptsG = pontosCartas[cG.valor] ?: 0
+            val total = ptsH + ptsG
+
+            var nPontosHost = s.pontosHost
+            var nPontosGuest = s.pontosGuest
+            if (hostGanhou) nPontosHost += total else nPontosGuest += total
+
+            if (souHostLocal == hostGanhou) {
+                vibrar(100)
+                mostrarFeedback("Você ganhou a rodada!")
+            } else {
+                vibrar(80)
+                mostrarFeedback("Oponente ganhou a rodada!")
+            }
+
+            val bara = s.baralho.toMutableList()
+            val mHost = s.maoHost.toMutableList()
+            val mGuest = s.maoGuest.toMutableList()
+            
+            if (bara.isNotEmpty()) {
+                mHost.add(bara.removeAt(0))
+                if (bara.isNotEmpty()) mGuest.add(bara.removeAt(0))
+            }
+
+            val proxTurno = if (hostGanhou) s.hostId else s.guestId
+            var status = "JOGANDO"
+            if (mHost.isEmpty() && mGuest.isEmpty()) status = "FINALIZADO"
+
+            s = s.copy(
+                mesaHost = null, mesaGuest = null,
+                pontosHost = nPontosHost, pontosGuest = nPontosGuest,
+                baralho = bara, maoHost = mHost, maoGuest = mGuest,
+                turno = proxTurno, iniciouRodada = proxTurno, status = status
+            )
+        }
+        FirebaseManager.enviarJogada(sala.id, s)
     }
 
     fun configurarBotoesDeJogo() {
