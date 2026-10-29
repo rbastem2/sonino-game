@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -123,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         
         // 4. Inicializa os Anúncios (AdMob)
         MobileAds.initialize(this) {}
-        FirebaseManager.iniciarSessao { }
+        FirebaseManager.iniciarSessao(onPronto = { }, onErro = { Log.e("Firebase", it) })
         carregarAnuncio()
         
         // 5. Carrega a dificuldade que o jogador escolheu por último
@@ -416,12 +417,34 @@ class MainActivity : AppCompatActivity() {
         telaAtual = "MULTIPLAYER"
         setContentView(R.layout.activity_multiplayer)
 
+        val btnCriar = findViewById<Button>(R.id.btnCriarSala)
+        val btnEntrar = findViewById<Button>(R.id.btnEntrarSala)
+        val txtStatus = findViewById<TextView>(R.id.txtStatusSala)
+
+        // Desativa os botões enquanto autentica
+        btnCriar.isEnabled = false
+        btnEntrar.isEnabled = false
+        txtStatus.text = "A ligar ao servidor..."
+
+        FirebaseManager.iniciarSessao(
+            onPronto = {
+                runOnUiThread {
+                    btnCriar.isEnabled = true
+                    btnEntrar.isEnabled = true
+                    txtStatus.text = "Ligado! Pode criar ou entrar numa sala."
+                }
+            },
+            onErro = { erro ->
+                runOnUiThread { txtStatus.text = "Erro: \$erro" }
+            }
+        )
+
         findViewById<Button>(R.id.btnVoltarMulti).setOnClickListener {
             vibrar()
             mostrarMenuPrincipal()
         }
 
-        findViewById<Button>(R.id.btnCriarSala).setOnClickListener {
+        btnCriar.setOnClickListener {
             vibrar()
             findViewById<TextView>(R.id.txtStatusSala).text = "A criar sala..."
             FirebaseManager.criarSala(

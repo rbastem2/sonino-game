@@ -13,3 +13,8 @@
 -keep class com.google.android.gms.ads.** { *; }
 -keep class com.google.android.ump.** { *; }
 -dontwarn com.google.android.gms.ads.**
+
+# Regras do Firebase
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
